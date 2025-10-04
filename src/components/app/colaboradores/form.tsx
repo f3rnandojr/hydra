@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useFormState } from "react-dom";
+import React, { useEffect, useActionState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,7 +43,7 @@ type CollaboratorFormProps = {
 };
 
 export function CollaboratorForm({ collaborator, action, onSuccess }: CollaboratorFormProps) {
-  const [state, formAction] = useFormState(action, { message: "" });
+  const [state, formAction] = useActionState(action, { message: "" });
   const { toast } = useToast();
 
   const form = useForm({
