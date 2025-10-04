@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const client = await clientPromise;
   const session = client.startSession();
   const authHeader = request.headers.get('authorization');
-  let usuarioId = "669ff07e8c3395d96a513f18"; // Default temporário
+  let usuarioId = "68e17d373ca54b8bec863bf0"; // Default temporário CORRIGIDO
 
   if (authHeader?.startsWith('Bearer ')) {
     // Em produção, validar token JWT
