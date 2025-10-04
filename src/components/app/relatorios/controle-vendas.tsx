@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -65,7 +65,7 @@ export function ControleVendas() {
     cafeteria: ""
   });
 
-  const fetchVendasRef = React.useRef(buscarVendas);
+  const fetchVendasRef = useRef(buscarVendas);
   fetchVendasRef.current = buscarVendas;
 
   // Buscar vendas quando os filtros mudarem
@@ -107,7 +107,7 @@ export function ControleVendas() {
   const handleFiltroChange = (key: keyof Omit<Filtros, 'dataInicio' | 'dataFim'>, value: string) => {
     setFiltros(prev => ({
       ...prev,
-      [key]: value
+      [key]: value === 'todos' ? '' : value
     }));
   };
 
