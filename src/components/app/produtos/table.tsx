@@ -19,6 +19,7 @@ export function ProductsTable({ products }: { products: Product[] }) {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
+            <TableHead className="hidden md:table-cell">EAN</TableHead>
             <TableHead className="hidden md:table-cell">Tipo</TableHead>
             <TableHead className="hidden md:table-cell text-right">Estoque Mínimo</TableHead>
             <TableHead className="text-right">Saldo</TableHead>
@@ -29,6 +30,9 @@ export function ProductsTable({ products }: { products: Product[] }) {
           {products.map((p) => (
             <TableRow key={p._id.toString()}>
               <TableCell className="font-medium">{p.nome}</TableCell>
+              <TableCell className="hidden md:table-cell font-mono text-xs">
+                {p.codigoEAN || '-'}
+              </TableCell>
               <TableCell className="hidden md:table-cell capitalize">{p.tipo}</TableCell>
                <TableCell className="hidden md:table-cell text-right">
                 {p.estoqueMinimo ?? "N/A"}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -255,21 +255,41 @@ function ProductSearch({ onProductSelect, selectedProductId }: { onProductSelect
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      if (query.length < 2) {
+  const fetchProducts = React.useCallback(async () => {
+      if (query.length === 0) {
         setProducts([]);
-        return
-      };
-      const response = await fetch(`/api/produtos?q=${query}`);
+        return;
+      }
+      const response = await fetch(`/api/produtos?q=${encodeURIComponent(query)}`);
       const data: Product[] = await response.json();
       setProducts(data);
-    }
-    const debounce = setTimeout(fetchProducts, 300);
-    return () => clearTimeout(debounce);
+      if (data.length === 1 && /^\d{13}$/.test(query)) {
+        handleSelect(data[0]);
+      }
   }, [query]);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const isEAN = /^\d{13}$/.test(query);
+    if (isEAN) {
+      fetchProducts();
+    } else {
+      const debounce = setTimeout(() => {
+        fetchProducts();
+      }, 300);
+      return () => clearTimeout(debounce);
+    }
+  }, [query, fetchProducts]);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => {
+        const input = document.querySelector('input[placeholder="Digite o nome ou EAN do produto..."]') as HTMLInputElement;
+        if (input) input.focus();
+      }, 100);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (selectedProductId && products.length > 0) {
       setSelectedProduct(products.find(p => p._id.toString() === selectedProductId) || null);
     } else if (!selectedProductId) {
@@ -302,7 +322,7 @@ function ProductSearch({ onProductSelect, selectedProductId }: { onProductSelect
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command shouldFilter={false}>
           <CommandInput 
-            placeholder="Digite o nome do produto..."
+            placeholder="Digite o nome ou EAN do produto..."
             value={query}
             onValueChange={setQuery}
           />

@@ -8,14 +8,24 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
 
+    let filter: any = { ativo: true };
+
+    if (query) {
+      // Buscar por EAN exato OU nome (case insensitive)
+      filter = {
+        ...filter,
+        $or: [
+          { codigoEAN: query }, // Busca exata por EAN
+          { nome: { $regex: query, $options: 'i' } } // Busca por nome
+        ]
+      };
+    }
+
     const produtos = await db
       .collection("produtos")
-      .find({ 
-        ativo: true,
-        nome: { $regex: query, $options: 'i' } 
-      })
+      .find(filter)
       .sort({ nome: 1 })
-      .limit(50) // Limita a 50 resultados para performance
+      .limit(50) 
       .toArray();
     
     return NextResponse.json(produtos);
