@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -57,14 +56,14 @@ export function FinalizarVenda({
       setIsLoading(true);
       setError(null);
       try {
-        // Buscar cafeteria ativa
-        const cafeteriaRes = await fetch('/api/parametros');
+        // Buscar cafeteria ativa - ✅ CORREÇÃO
+        const cafeteriaRes = await fetch('/api/parametros?chave=CAFETERIA_ATIVA');
         if (!cafeteriaRes.ok) {
           const errorData = await cafeteriaRes.json();
           throw new Error(errorData.error || "Não foi possível carregar a configuração da cafeteria.");
         }
         const cafeteriaParam = await cafeteriaRes.json();
-        setCafeteriaAtiva(cafeteriaParam.valor);
+        setCafeteriaAtiva(cafeteriaParam?.valor || null);
 
         // Buscar colaboradores se necessário
         if (tipoCliente === 'colaborador') {
@@ -279,5 +278,3 @@ export function FinalizarVenda({
     </Dialog>
   );
 }
-
-    
