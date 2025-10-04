@@ -43,31 +43,32 @@ export async function POST(request: NextRequest) {
 
       // 1. Verificar estoque de todos os itens
       for (const item of itens) {
-        const produto = await db.collection("produtos").findOne(
-          { _id: new ObjectId(item.produtoId), ativo: true },
-          { session, projection: { saldo: 1, nome: 1 } }
+        
+        const estoqueCafeteria = await db.collection("estoque").findOne(
+          { produtoId: new ObjectId(item.produtoId), cafeteria: vendaData.cafeteria },
+          { session }
         );
 
-        if (!produto) {
-          throw new Error(`Produto "${item.nomeProduto}" não encontrado ou inativo.`);
+        if (!estoqueCafeteria) {
+           throw new Error(`Produto "${item.nomeProduto}" não encontrado no estoque da cafeteria.`);
         }
 
-        if (vendaData.tipoCliente === 'normal' && produto.saldo < item.quantidade) {
-          throw new Error(`Estoque insuficiente para o produto "${produto.nome}". Disponível: ${produto.saldo}, Solicitado: ${item.quantidade}.`);
+        if (vendaData.tipoCliente === 'normal' && estoqueCafeteria.saldo < item.quantidade) {
+          throw new Error(`Estoque insuficiente para o produto "${item.nomeProduto}". Disponível: ${estoqueCafeteria.saldo}, Solicitado: ${item.quantidade}.`);
         }
       }
 
       // 2. Atualizar o estoque de cada produto
       const bulkOperations = itens.map(item => ({
         updateOne: {
-          filter: { _id: new ObjectId(item.produtoId) },
+          filter: { produtoId: new ObjectId(item.produtoId), cafeteria: vendaData.cafeteria },
           update: { 
             $inc: { saldo: -item.quantidade },
             $set: { dataAtualizacao: new Date() }
           }
         }
       }));
-      await db.collection("produtos").bulkWrite(bulkOperations, { session });
+      await db.collection("estoque").bulkWrite(bulkOperations, { session });
 
       // 3. Criar a venda
       const totalVenda = itens.reduce((sum, item) => sum + item.subtotal, 0);

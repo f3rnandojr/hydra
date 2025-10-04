@@ -37,10 +37,10 @@ export async function GET(request: NextRequest) {
           }
         },
         {
-          $unwind: "$colaborador"
+          $unwind: { path: "$colaborador", preserveNullAndEmptyArrays: true }
         },
         {
-          $unwind: "$venda"
+          $unwind: { path: "$venda", preserveNullAndEmptyArrays: true }
         },
         {
           $sort: { dataVenda: -1 }
@@ -51,16 +51,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(contas.map(conta => ({
       ...conta,
       _id: conta._id.toString(),
-      vendaId: conta.vendaId.toString(),
-      colaboradorId: conta.colaboradorId.toString(),
-      colaborador: {
+      vendaId: conta.vendaId?.toString(),
+      colaboradorId: conta.colaboradorId?.toString(),
+      colaborador: conta.colaborador ? {
         ...conta.colaborador,
         _id: conta.colaborador._id.toString()
-      },
-      venda: {
+      } : null,
+      venda: conta.venda ? {
         ...conta.venda,
         _id: conta.venda._id.toString()
-      }
+      } : null
     })));
   } catch (error) {
     console.error("Erro ao buscar contas a receber:", error);
@@ -68,5 +68,51 @@ export async function GET(request: NextRequest) {
       { error: "Erro interno do servidor" },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const session = (await clientPromise).startSession();
+  try {
+    const body = await request.json();
+    const { contaIds, formaPagamento } = body;
+
+    if (!Array.isArray(contaIds) || contaIds.length === 0) {
+      return NextResponse.json({ message: "Nenhuma conta selecionada para quitação." }, { status: 400 });
+    }
+    if (!formaPagamento) {
+      return NextResponse.json({ message: "Forma de pagamento da quitação é obrigatória." }, { status: 400 });
+    }
+
+    let result;
+    await session.withTransaction(async () => {
+      const db = (await clientPromise).db("hydra");
+      const objectIds = contaIds.map(id => new ObjectId(id));
+
+      result = await db.collection("contas_receber").updateMany(
+        { _id: { $in: objectIds }, status: "em_debito" },
+        {
+          $set: {
+            status: "quitado",
+            dataQuitacao: new Date(),
+            formaQuitacao: formaPagamento,
+            dataAtualizacao: new Date()
+          }
+        },
+        { session }
+      );
+    });
+
+    if (result && result.modifiedCount > 0) {
+      return NextResponse.json({ message: `${result.modifiedCount} conta(s) quitada(s) com sucesso.` });
+    } else {
+      return NextResponse.json({ message: "Nenhuma conta em débito foi encontrada para quitação." }, { status: 404 });
+    }
+
+  } catch (error) {
+    console.error("Erro ao quitar contas:", error);
+    return NextResponse.json({ message: "Falha ao quitar contas." }, { status: 500 });
+  } finally {
+    await session.endSession();
   }
 }
