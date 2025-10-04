@@ -8,7 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter, Download, Calendar, User, Store, CreditCard, DollarSign, QrCode, LineChart, ShoppingCart } from "lucide-react";
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  ShoppingCart,
+  CreditCard, 
+  DollarSign, 
+  QrCode, 
+  User, 
+  Store 
+} from "lucide-react";
 
 interface Venda {
   _id: string;
