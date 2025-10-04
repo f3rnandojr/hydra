@@ -56,15 +56,15 @@ export async function GET(request: NextRequest) {
     // Construir filtro completo
     const filtro: any = { ...dataFiltro };
 
-    if (formaPagamento) {
+    if (formaPagamento && formaPagamento !== 'todos') {
       filtro.formaPagamento = formaPagamento;
     }
 
-    if (tipoCliente) {
+    if (tipoCliente && tipoCliente !== 'todos') {
       filtro.tipoCliente = tipoCliente;
     }
 
-    if (cafeteria) {
+    if (cafeteria && cafeteria !== 'todos') {
       filtro.cafeteria = cafeteria;
     }
 

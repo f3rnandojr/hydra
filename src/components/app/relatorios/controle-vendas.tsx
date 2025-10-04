@@ -48,9 +48,9 @@ interface Filtros {
   periodo: "hoje" | "semana" | "mes" | "ano" | "personalizado";
   dataInicio?: string;
   dataFim?: string;
-  formaPagamento?: string;
-  tipoCliente?: string;
-  cafeteria?: string;
+  formaPagamento: string;
+  tipoCliente: string;
+  cafeteria: string;
   colaboradorId?: string;
 }
 
@@ -65,12 +65,15 @@ export function ControleVendas() {
     cafeteria: ""
   });
 
+  const fetchVendasRef = React.useRef(buscarVendas);
+  fetchVendasRef.current = buscarVendas;
+
   // Buscar vendas quando os filtros mudarem
   useEffect(() => {
-    buscarVendas();
+    fetchVendasRef.current();
   }, [filtros]);
 
-  const buscarVendas = async () => {
+  async function buscarVendas() {
     setCarregando(true);
     try {
       const params = new URLSearchParams();
@@ -101,7 +104,7 @@ export function ControleVendas() {
     }
   };
 
-  const handleFiltroChange = (key: keyof Filtros, value: string) => {
+  const handleFiltroChange = (key: keyof Omit<Filtros, 'dataInicio' | 'dataFim'>, value: string) => {
     setFiltros(prev => ({
       ...prev,
       [key]: value
@@ -113,7 +116,9 @@ export function ControleVendas() {
       periodo: "hoje",
       formaPagamento: "",
       tipoCliente: "",
-      cafeteria: ""
+      cafeteria: "",
+      dataInicio: "",
+      dataFim: "",
     });
   };
 
@@ -204,7 +209,7 @@ export function ControleVendas() {
                   <SelectValue placeholder="Todas as formas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as formas</SelectItem>
+                  <SelectItem value="todos">Todas as formas</SelectItem>
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   <SelectItem value="cartao_credito">Cartão Crédito</SelectItem>
                   <SelectItem value="cartao_debito">Cartão Débito</SelectItem>
@@ -225,7 +230,7 @@ export function ControleVendas() {
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os tipos</SelectItem>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
                   <SelectItem value="normal">Cliente Normal</SelectItem>
                   <SelectItem value="colaborador">Colaborador</SelectItem>
                 </SelectContent>
@@ -243,7 +248,7 @@ export function ControleVendas() {
                   <SelectValue placeholder="Todas as cafeterias" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as cafeterias</SelectItem>
+                  <SelectItem value="todos">Todas as cafeterias</SelectItem>
                   <SelectItem value="cafeteria_01">Cafeteria 01</SelectItem>
                   <SelectItem value="cafeteria_02">Cafeteria 02</SelectItem>
                 </SelectContent>
@@ -259,7 +264,7 @@ export function ControleVendas() {
                 <Input 
                   type="date" 
                   value={filtros.dataInicio || ''}
-                  onChange={(e) => handleFiltroChange('dataInicio', e.target.value)}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
@@ -267,7 +272,7 @@ export function ControleVendas() {
                 <Input 
                   type="date" 
                   value={filtros.dataFim || ''}
-                  onChange={(e) => handleFiltroChange('dataFim', e.target.value)}
+                  onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
                 />
               </div>
             </div>
