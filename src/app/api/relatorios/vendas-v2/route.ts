@@ -1,4 +1,3 @@
-
 // src/app/api/relatorios/vendas-v2/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
@@ -56,12 +55,29 @@ export async function GET(request: NextRequest) {
       filtro.cafeteria = cafeteria;
     }
 
-    console.log('=== FILTROS APLICADOS ===', filtro);
+    // ================= DEBUG BLOCK START =================
+    console.log('--- INICIANDO DEBUG ESTRUTURAL ---');
+    const userCount = await db.collection('usuarios').countDocuments();
+    const collabCount = await db.collection('colaboradores').countDocuments();
+    console.log(`Coleção 'usuarios' existe e tem ${userCount} documentos.`);
+    console.log(`Coleção 'colaboradores' existe e tem ${collabCount} documentos.`);
+
+    const primeiraVenda = await db.collection('vendas').findOne(filtro, { sort: { dataVenda: -1 } });
+    if (primeiraVenda) {
+        console.log('Tipo de usuarioId na venda:', typeof primeiraVenda.usuarioId, `(É ObjectId: ${ObjectId.isValid(primeiraVenda.usuarioId)})`);
+        
+        const manualUserLookup = await db.collection('usuarios').findOne({ _id: primeiraVenda.usuarioId });
+        console.log('Resultado do lookup manual:', manualUserLookup ? `ENCONTRADO: ${manualUserLookup.nome}` : 'NÃO ENCONTRADO');
+    } else {
+        console.log('Nenhuma venda encontrada para o filtro, debug manual não pode prosseguir.');
+    }
+    console.log('--- FIM DEBUG ESTRUTURAL ---');
+    // ================= DEBUG BLOCK END =================
+
     
-    // Pipeline SIMPLES e TESTADO
     const aggregatePipeline: any[] = [
       {
-        $match: filtro // ← Usar o filtro construído
+        $match: filtro
       },
       {
         $sort: { dataVenda: -1 }
@@ -84,7 +100,6 @@ export async function GET(request: NextRequest) {
       },
       {
         $addFields: {
-          // Converter arrays em objetos simples
           usuario: { $arrayElemAt: ["$usuario", 0] },
           colaborador: { $arrayElemAt: ["$colaborador", 0] }
         }
