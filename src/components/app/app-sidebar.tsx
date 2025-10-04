@@ -2,7 +2,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Users, Waves, Package, ShoppingCart, Settings, Coffee } from "lucide-react";
+import { Users, Waves, Package, ShoppingCart, Settings, Coffee, LineChart } from "lucide-react";
 
 import {
   Sidebar,
@@ -64,6 +64,18 @@ export function AppSidebar() {
               <Link href="/vendas">
                 <ShoppingCart />
                 <span>Vendas</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname.startsWith("/relatorios")}
+              tooltip="Relatórios"
+            >
+              <Link href="/relatorios/vendas">
+                <LineChart />
+                <span>Relatórios</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
