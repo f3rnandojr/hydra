@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock } from "lucide-react";
+import { useAuth } from '@/contexts/auth-context';
 
 interface ContaReceber {
   _id: string;
@@ -43,6 +44,7 @@ interface Filtros {
 
 export function ContasReceber() {
   const { toast } = useToast();
+  const { usuario } = useAuth();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [colaboradores, setColaboradores] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(false);
@@ -137,6 +139,7 @@ export function ContasReceber() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${usuario?._id}`,
         },
         body: JSON.stringify({
           contaId,

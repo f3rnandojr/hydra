@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createEntrada } from "@/app/entradas/actions";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@/lib/definitions";
+import { useAuth } from '@/contexts/auth-context';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ type EntradaFormProps = {
 
 export function EntradaForm({ onSuccess }: EntradaFormProps) {
   const { toast } = useToast();
+  const { usuario } = useAuth();
   const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("nota_fiscal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cafeteria, setCafeteria] = useState("cafeteria_01");
@@ -102,7 +104,7 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
     }
     
     try {
-        const result = await createEntrada(null, formData);
+        const result = await createEntrada(null, formData, usuario?._id);
         if (result.message && !result.errors) {
             toast({
                 title: "Sucesso!",

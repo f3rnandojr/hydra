@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Product, Collaborator } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from '@/contexts/auth-context';
 
 interface FinalizarVendaProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function FinalizarVenda({
   onVendaFinalizada 
 }: FinalizarVendaProps) {
   const { toast } = useToast();
+  const { usuario } = useAuth();
   const [colaboradorId, setColaboradorId] = useState("");
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [cafeteriaAtiva, setCafeteriaAtiva] = useState<string | null>(null);
@@ -139,6 +141,7 @@ export function FinalizarVenda({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${usuario?._id}`,
         },
         body: JSON.stringify(vendaData),
       });
@@ -377,5 +380,3 @@ export function FinalizarVenda({
     </Dialog>
   );
 }
-
-    
