@@ -77,7 +77,7 @@ export function AppSidebar() {
             </Link>
           </SidebarMenuItem>
            <SidebarMenuItem>
-            <Link href="/contas-receber">
+             <Link href="/contas-receber">
               <SidebarMenuButton
                 isActive={pathname.startsWith("/contas-receber")}
                 tooltip="Contas a Receber"
@@ -85,10 +85,10 @@ export function AppSidebar() {
                 <Receipt />
                 <span>Contas a Receber</span>
               </SidebarMenuButton>
-            </Link>
+             </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <Link href="/relatorios/vendas">
+             <Link href="/relatorios/vendas">
               <SidebarMenuButton
                 isActive={pathname === "/relatorios/vendas"}
                 tooltip="Relatório de Vendas"
@@ -96,7 +96,7 @@ export function AppSidebar() {
                 <LineChart />
                 <span>Relatório de Vendas</span>
               </SidebarMenuButton>
-            </Link>
+             </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <Link href="/relatorios/estoque">

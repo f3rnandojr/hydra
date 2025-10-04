@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import type { Usuario } from "@/lib/definitions";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateUsuarioButton } from "./buttons";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
+import { Search, Filter, Plus, Edit, Trash2, User, Shield, UserCheck, UserX } from "lucide-react";
+import { Usuario } from "@/lib/definitions";
+import { CreateUsuarioButton, EditUsuarioButton, DeleteUsuarioButton } from "./buttons";
 import { UsuariosTable } from "./table";
+
 
 interface GerenciarUsuariosProps {
   initialUsuarios: Usuario[];

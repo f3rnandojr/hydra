@@ -116,3 +116,50 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { status } = await request.json();
+    
+    if (!status) {
+      return NextResponse.json(
+        { error: "Status é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db("hydra");
+
+    const resultado = await db.collection("usuarios").updateOne(
+      { _id: new ObjectId(params.id) },
+      { 
+        $set: { 
+          status: status,
+          dataAtualizacao: new Date()
+        } 
+      }
+    );
+
+    if (resultado.modifiedCount === 0) {
+      return NextResponse.json(
+        { error: "Usuário não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Usuário atualizado com sucesso" 
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar usuário:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
