@@ -6,9 +6,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Product, ItemVenda } from "@/lib/definitions";
 
-import { Button } from "@/components/ui/button";
 import { ProdutoSearchVenda } from "./produto-search-venda";
 import { CarrinhoVenda } from "./carrinho-venda";
+import { useToast } from "@/hooks/use-toast";
 
 const vendaSchema = z.object({
   itens: z
@@ -29,7 +29,8 @@ const vendaSchema = z.object({
 type VendaFormData = z.infer<typeof vendaSchema>;
 
 export function VendaForm() {
-  const { control, watch, setValue } = useForm<VendaFormData>({
+    const { toast } = useToast();
+  const { control, watch, setValue, reset } = useForm<VendaFormData>({
     resolver: zodResolver(vendaSchema),
     defaultValues: {
       itens: [],
@@ -43,6 +44,14 @@ export function VendaForm() {
   });
 
   const handleProductSelect = (product: Product) => {
+    if (product.saldo <= 0) {
+        toast({
+            title: "Estoque Insuficiente",
+            description: `O produto "${product.nome}" não tem estoque disponível.`,
+            variant: "destructive"
+        });
+        return;
+    }
     // TODO: Usar preço real do produto
     const mockPrice = Math.floor(Math.random() * 20) + 5;
 
@@ -52,6 +61,14 @@ export function VendaForm() {
 
     if (existingItemIndex > -1) {
       const existingItem = fields[existingItemIndex];
+       if (existingItem.quantidade >= product.saldo) {
+            toast({
+                title: "Limite de Estoque Atingido",
+                description: `Você já adicionou todo o estoque disponível para "${product.nome}".`,
+                variant: "destructive"
+            });
+            return;
+        }
       update(existingItemIndex, {
         ...existingItem,
         quantidade: existingItem.quantidade + 1,
@@ -68,6 +85,14 @@ export function VendaForm() {
       });
     }
   };
+  
+   const handleVendaFinalizada = () => {
+    toast({
+        title: "Venda Finalizada!",
+        description: "A venda foi registrada com sucesso.",
+    });
+    reset({ itens: [], total: 0 });
+  };
 
   return (
     <div className="space-y-6">
@@ -83,6 +108,7 @@ export function VendaForm() {
             remove={remove} 
             update={update}
             watch={watch}
+            onVendaFinalizada={handleVendaFinalizada}
         />
       </div>
     </div>

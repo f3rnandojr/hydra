@@ -7,17 +7,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import type { ItemVenda, Product } from "@/lib/definitions";
 import type { UseFieldArrayRemove, UseFieldArrayUpdate, Control, UseFormWatch } from "react-hook-form";
-import { useWatch } from "react-hook-form";
+import React, { useState } from "react";
+import { FinalizarVenda } from "./finalizar-venda";
 
 interface VendaCarrinhoProps {
   control: Control<any>;
   remove: UseFieldArrayRemove;
   update: UseFieldArrayUpdate<any>;
   watch: UseFormWatch<any>;
+  onVendaFinalizada: () => void;
 }
 
-export function CarrinhoVenda({ control, remove, update, watch }: VendaCarrinhoProps) {
+export function CarrinhoVenda({ control, remove, update, watch, onVendaFinalizada }: VendaCarrinhoProps) {
   const itens = watch("itens") as ItemVenda[];
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const handleQuantityChange = (index: number, newQuantity: number) => {
     const item = itens[index];
@@ -43,106 +46,124 @@ export function CarrinhoVenda({ control, remove, update, watch }: VendaCarrinhoP
       </div>
     );
   }
+  
+  const mappedItens = itens.map(item => ({
+    produto: {
+        _id: item.produtoId,
+        nome: item.nomeProduto,
+        codigoEAN: item.codigoEAN,
+        // Inclua outros campos de produto necessários se houver
+    } as Product,
+    quantidade: item.quantidade,
+    precoUnitario: item.precoUnitario,
+  }));
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Produto</TableHead>
-              <TableHead className="text-center">Quantidade</TableHead>
-              <TableHead className="text-right">Preço Unit.</TableHead>
-              <TableHead className="text-right">Subtotal</TableHead>
-              <TableHead className="w-[80px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {itens.map((item, index) => (
-              <TableRow key={item.produtoId}>
-                <TableCell>
-                  <div className="space-y-1">
-                    <div className="font-medium">{item.nomeProduto}</div>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {/* {item.produto.tipo} */}
-                      </Badge>
-                      {item.codigoEAN && (
-                        <Badge variant="secondary" className="text-xs font-mono">
-                          {item.codigoEAN}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleQuantityChange(index, item.quantidade - 1)}
-                      disabled={item.quantidade <= 1}
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantidade}
-                      onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 1)}
-                      className="w-16 text-center"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleQuantityChange(index, item.quantidade + 1)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  R$ {item.precoUnitario.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  R$ {item.subtotal.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(index)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </TableCell>
+    <>
+      <div className="space-y-4">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Produto</TableHead>
+                <TableHead className="text-center">Quantidade</TableHead>
+                <TableHead className="text-right">Preço Unit.</TableHead>
+                <TableHead className="text-right">Subtotal</TableHead>
+                <TableHead className="w-[80px]"></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-       {/* Resumo do Total */}
-      <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
-        <div className="space-y-1">
-          <div className="text-sm text-muted-foreground">
-            {itens.length} {itens.length === 1 ? 'item' : 'itens'} na venda
-          </div>
-          <div className="text-lg font-semibold">
-            Total: R$ {calcularTotal().toFixed(2)}
-          </div>
+            </TableHeader>
+            <TableBody>
+              {itens.map((item, index) => (
+                <TableRow key={item.produtoId}>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="font-medium">{item.nomeProduto}</div>
+                      <div className="flex gap-2">
+                        {item.codigoEAN && (
+                          <Badge variant="secondary" className="text-xs font-mono">
+                            {item.codigoEAN}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleQuantityChange(index, item.quantidade - 1)}
+                        disabled={item.quantidade <= 1}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantidade}
+                        onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 1)}
+                        className="w-16 text-center"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleQuantityChange(index, item.quantidade + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    R$ {item.precoUnitario.toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    R$ {item.subtotal.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-        
-        <Button 
-          size="lg" 
-          className="font-semibold"
-          disabled={itens.length === 0}
-        >
-          Finalizar Venda
-        </Button>
+
+        {/* Resumo do Total */}
+        <div className="flex justify-between items-center p-4 bg-muted/50 rounded-lg">
+          <div className="space-y-1">
+            <div className="text-sm text-muted-foreground">
+              {itens.length} {itens.length === 1 ? 'item' : 'itens'} na venda
+            </div>
+            <div className="text-lg font-semibold">
+              Total: R$ {calcularTotal().toFixed(2)}
+            </div>
+          </div>
+          
+          <Button 
+            size="lg" 
+            className="font-semibold"
+            disabled={itens.length === 0}
+            onClick={() => setIsModalOpen(true)}
+          >
+            Finalizar Venda
+          </Button>
+        </div>
       </div>
-    </div>
+      
+      <FinalizarVenda
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        itens={mappedItens}
+        onVendaFinalizada={onVendaFinalizada}
+      />
+    </>
   );
 }
