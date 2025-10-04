@@ -7,26 +7,34 @@ export async function GET(request: Request) {
     const db = client.db("hydra");
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
-    const tipoCliente = searchParams.get('tipoCliente') || 'normal';
+    const tipoCliente = searchParams.get('tipoCliente') || 'normal'; // 👈 Novo parâmetro
+
+    console.log(`🔍 Busca produtos - Query: "${query}", TipoCliente: ${tipoCliente}`); // 👈 Log para debug
 
     let filter: any = { 
         ativo: true
     };
 
+    // 👇 Aplicar filtro de estoque apenas para cliente normal
     if (tipoCliente === 'normal') {
         filter.saldo = { $gt: 0 };
+        console.log('🛒 Aplicando filtro de estoque para cliente normal');
+    } else {
+        console.log('👥 Colaborador - Sem filtro de estoque');
     }
+    // Para colaborador, não aplicamos filtro de saldo
 
     if (query) {
-      // Buscar por EAN exato OU nome (case insensitive)
       filter = {
         ...filter,
         $or: [
-          { codigoEAN: query }, // Busca exata por EAN
-          { nome: { $regex: query, $options: 'i' } } // Busca por nome
+          { codigoEAN: query },
+          { nome: { $regex: query, $options: 'i' } }
         ]
       };
     }
+
+    console.log('📋 Filtro aplicado:', JSON.stringify(filter)); // 👈 Log do filtro
 
     const produtos = await db
       .collection("produtos")
@@ -34,6 +42,8 @@ export async function GET(request: Request) {
       .sort({ nome: 1 })
       .limit(50) 
       .toArray();
+    
+    console.log(`📦 Produtos encontrados: ${produtos.length}`); // 👈 Log de resultados
     
     return NextResponse.json(produtos.map(p => ({...p, _id: p._id.toString()})));
   } catch (error) {
