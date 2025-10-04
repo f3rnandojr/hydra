@@ -1,5 +1,6 @@
 
 import { AppSidebar } from "@/components/app/app-sidebar";
+import { AppHeader } from "@/components/app/app-header";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export default function AdminLayout({
@@ -10,7 +11,10 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <AppHeader />
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }
