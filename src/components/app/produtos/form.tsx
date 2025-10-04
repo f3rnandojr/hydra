@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,6 +33,8 @@ const productSchema = z.object({
   estoqueMinimo: z.coerce.number().optional().nullable(),
 });
 
+type ProductFormData = z.infer<typeof productSchema>;
+
 type ProductFormProps = {
   product?: Product;
   action: (prevState: any, formData: FormData) => Promise<{ message: string; errors?: any }>;
@@ -40,38 +42,58 @@ type ProductFormProps = {
 };
 
 export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
-  const [state, formAction] = useActionState(action, { message: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm({
+  const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       nome: product?.nome || "",
       tipo: product?.tipo || "alimento",
-      estoqueMinimo: product?.estoqueMinimo || undefined,
+      estoqueMinimo: product?.estoqueMinimo || null,
     },
   });
 
-  useEffect(() => {
-    if (state.message && !state.errors) {
-      toast({
-        title: "Sucesso!",
-        description: state.message,
-      });
-      onSuccess();
-    } else if (state.message && state.errors) {
-       toast({
-        title: "Erro",
-        description: state.message,
-        variant: "destructive",
-       });
-    }
-  }, [state, toast, onSuccess]);
+  const onSubmit = async (data: ProductFormData) => {
+    setIsSubmitting(true);
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        formData.append(key, String(value));
+      }
+    });
 
+    try {
+      const result = await action(null, formData);
+      
+      if (result.message && !result.errors) {
+        toast({
+          title: "Sucesso!",
+          description: result.message,
+        });
+        onSuccess();
+      } else if (result.message && result.errors) {
+        toast({
+          title: "Erro",
+          description: result.message,
+          variant: "destructive",
+        });
+        // You could use form.setError here if the errors object matches
+      }
+    } catch (error) {
+      toast({
+        title: "Erro Inesperado",
+        description: "Ocorreu um erro ao processar o formulário.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Form {...form}>
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="nome"
@@ -113,7 +135,13 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
             <FormItem>
               <FormLabel>Estoque Mínimo</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Opcional" {...field} value={field.value ?? ''}/>
+                <Input 
+                  type="number" 
+                  placeholder="Opcional" 
+                  {...field}
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                />
               </FormControl>
               <FormDescription>
                 Deixe em branco se não houver estoque mínimo.
@@ -122,7 +150,7 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
           {product ? "Salvar Alterações" : "Criar Produto"}
         </Button>
       </form>
