@@ -31,6 +31,7 @@ const itemSchema = z.object({
   produtoId: z.string().min(1, "Selecione um produto."),
   produtoNome: z.string(),
   quantidade: z.coerce.number().min(0.01, "Quantidade deve ser positiva."),
+  precoCusto: z.coerce.number().min(0.01, "Preço de custo deve ser maior que zero"),
 });
 
 const notaFiscalSchema = z.object({
@@ -91,7 +92,7 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
 
     if (data.tipo === 'nota_fiscal') {
       formData.append("numeroNotaFiscal", data.numeroNotaFiscal);
-      formData.append("itens", JSON.stringify(data.itens.map(it => ({produtoId: it.produtoId, quantidade: it.quantidade}))));
+      formData.append("itens", JSON.stringify(data.itens.map(it => ({produtoId: it.produtoId, quantidade: it.quantidade, precoCusto: it.precoCusto}))));
     } else { 
       formData.append("produtoId", data.produtoId);
       formData.append("novoSaldo", String(data.novoSaldo));
@@ -153,13 +154,14 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
             />
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Itens da Nota</h3>
-              <ProductSearch onProductSelect={(product) => append({ produtoId: product._id.toString(), produtoNome: product.nome, quantidade: 1 })} />
+              <ProductSearch onProductSelect={(product) => append({ produtoId: product._id.toString(), produtoNome: product.nome, quantidade: 1, precoCusto: 0 })} />
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Produto</TableHead>
                       <TableHead className="w-[120px]">Quantidade</TableHead>
+                      <TableHead className="w-[150px]">Preço Custo (R$)</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -182,6 +184,21 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
                             />
                         </TableCell>
                         <TableCell>
+                           <FormField
+                              control={form.control}
+                              name={`itens.${index}.precoCusto` as any}
+                              render={({ field }) => (
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  placeholder="0,00"
+                                  {...field}
+                                  value={field.value ?? ""}
+                                />
+                              )}
+                            />
+                        </TableCell>
+                        <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -190,7 +207,7 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
                     ))}
                      {fields.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
                           Nenhum item adicionado.
                         </TableCell>
                       </TableRow>

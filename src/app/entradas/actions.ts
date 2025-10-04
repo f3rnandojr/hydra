@@ -6,13 +6,16 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
 // Schema para Nota Fiscal
+const itemSchema = z.object({
+  produtoId: z.string().min(1, "Produto é obrigatório"),
+  quantidade: z.number().min(0.01, "Quantidade deve ser maior que zero"),
+  precoCusto: z.number().min(0.01, "Preço de custo deve ser maior que zero"),
+});
+
 const notaFiscalSchema = z.object({
   tipo: z.literal("nota_fiscal"),
   numeroNotaFiscal: z.string().min(1, "Número da nota é obrigatório"),
-  itens: z.array(z.object({
-    produtoId: z.string().min(1, "Produto é obrigatório"),
-    quantidade: z.number().min(0.01, "Quantidade deve ser maior que zero")
-  })).min(1, "Adicione pelo menos um item")
+  itens: z.array(itemSchema).min(1, "Adicione pelo menos um item")
 });
 
 // Schema para Ajuste
@@ -84,6 +87,7 @@ export async function createEntrada(prevState: any, formData: FormData) {
             return {
               produtoId: new ObjectId(item.produtoId),
               quantidade: item.quantidade,
+              precoCusto: item.precoCusto,
               saldoAnterior,
               saldoAtual
             };

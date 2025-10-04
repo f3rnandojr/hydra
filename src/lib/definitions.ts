@@ -27,6 +27,7 @@ export type Product = {
 export type EntryItem = {
   produtoId: string | ObjectId;
   quantidade: number;
+  precoCusto: number;
   saldoAnterior: number;
   saldoAtual: number;
 };
