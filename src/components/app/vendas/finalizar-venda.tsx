@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Check, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -22,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import type { Product } from "@/lib/definitions";
+import type { Product, Collaborator } from "@/lib/definitions";
+import { useToast } from "@/hooks/use-toast";
 
 interface FinalizarVendaProps {
   open: boolean;
@@ -32,24 +32,20 @@ interface FinalizarVendaProps {
     quantidade: number;
     precoUnitario: number;
   }>;
+  tipoCliente: "normal" | "colaborador";
   onVendaFinalizada: () => void;
-}
-
-interface Colaborador {
-  _id: string;
-  nome: string;
-  email: string;
 }
 
 export function FinalizarVenda({ 
   open, 
   onOpenChange, 
-  itens, 
+  itens,
+  tipoCliente,
   onVendaFinalizada 
 }: FinalizarVendaProps) {
-  const [tipoCliente, setTipoCliente] = useState<"normal" | "colaborador">("normal");
+  const { toast } = useToast();
   const [colaboradorId, setColaboradorId] = useState("");
-  const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
+  const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [cafeteria, setCafeteria] = useState<"cafeteria_1" | "cafeteria_2">("cafeteria_1");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,13 +58,25 @@ export function FinalizarVenda({
         setColaboradores(data);
       } catch (error) {
         console.error('Erro ao buscar colaboradores:', error);
+         toast({
+          title: "Erro ao buscar colaboradores",
+          description: "Não foi possível carregar a lista de colaboradores.",
+          variant: "destructive",
+        });
       }
     }
     
-    if (open) {
+    if (open && tipoCliente === 'colaborador') {
       fetchColaboradores();
     }
-  }, [open]);
+  }, [open, tipoCliente, toast]);
+  
+  // Resetar colaborador selecionado quando o tipo de cliente muda
+  useEffect(() => {
+    if (tipoCliente === 'normal') {
+      setColaboradorId('');
+    }
+  }, [tipoCliente]);
 
   const calcularTotal = () => {
     return itens.reduce((total, item) => 
@@ -105,16 +113,18 @@ export function FinalizarVenda({
         onVendaFinalizada();
         onOpenChange(false);
         // Reset form
-        setTipoCliente("normal");
         setColaboradorId("");
-        setCafeteria("cafeteria_1");
       } else {
         const error = await response.json();
         throw new Error(error.message || 'Erro ao finalizar venda');
       }
     } catch (error: any) {
       console.error('Erro:', error);
-      alert(error.message || 'Erro ao finalizar venda');
+       toast({
+        title: "Erro ao Finalizar Venda",
+        description: error.message || 'Não foi possível registrar a venda.',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -145,26 +155,18 @@ export function FinalizarVenda({
             </Select>
           </div>
 
-          {/* Tipo de Cliente */}
-          <div className="space-y-3">
-            <Label>Tipo de Cliente</Label>
-            <RadioGroup value={tipoCliente} onValueChange={(value: "normal" | "colaborador") => setTipoCliente(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="normal" id="normal" />
-                <Label htmlFor="normal" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Cliente Normal
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="colaborador" id="colaborador" />
-                <Label htmlFor="colaborador" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Colaborador
-                </Label>
-              </div>
-            </RadioGroup>
+          {/* Tipo de Cliente (Informativo) */}
+          <div className="space-y-2">
+             <Label>Tipo de Cliente</Label>
+             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${
+                tipoCliente === "colaborador" 
+                    ? "bg-accent/10 text-accent-foreground border-accent/20" 
+                    : "bg-muted text-muted-foreground border-border"
+                }`}>
+                {tipoCliente === 'colaborador' ? 'Colaborador' : 'Cliente Normal'}
+            </div>
           </div>
+
 
           {/* Seleção de Colaborador (se for venda para colaborador) */}
           {tipoCliente === "colaborador" && (
@@ -176,7 +178,7 @@ export function FinalizarVenda({
                 </SelectTrigger>
                 <SelectContent>
                   {colaboradores.map((colab) => (
-                    <SelectItem key={colab._id} value={colab._id}>
+                    <SelectItem key={colab._id.toString()} value={colab._id.toString()}>
                       {colab.nome} ({colab.email})
                     </SelectItem>
                   ))}
