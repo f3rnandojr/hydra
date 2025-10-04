@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useActionState, useState } from "react";
+import React, { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,16 +45,18 @@ const ajusteSchema = z.object({
   novoSaldo: z.coerce.number().min(0, "O novo saldo não pode ser negativo."),
 });
 
-type FormData = z.infer<typeof notaFiscalSchema> | z.infer<typeof ajusteSchema>;
+const formSchema = z.discriminatedUnion("tipo", [notaFiscalSchema, ajusteSchema]);
+
+type FormData = z.infer<typeof formSchema>;
 
 type EntradaFormProps = {
   onSuccess: () => void;
 };
 
 export function EntradaForm({ onSuccess }: EntradaFormProps) {
-  const [state, formAction] = useActionState(createEntrada, { message: "" });
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("nota_fiscal");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(activeTab === 'nota_fiscal' ? notaFiscalSchema : ajusteSchema),
@@ -66,14 +68,8 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
       itens: [],
     },
   });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "itens" as any, // HACK: for discriminated union
-  });
-
-  // Reset form when tab changes
-  useEffect(() => {
+  
+  React.useEffect(() => {
     form.reset({
       tipo: activeTab,
       numeroNotaFiscal: "",
@@ -82,48 +78,61 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
       itens: [],
     });
   }, [activeTab, form]);
-  
-  useEffect(() => {
-    if (state.message && !state.errors) {
-      toast({
-        title: "Sucesso!",
-        description: state.message,
-      });
-      onSuccess();
-    } else if (state.message && state.errors) {
-      toast({
-        title: "Erro de Validação",
-        description: state.message,
-        variant: "destructive",
-      });
-    }
-  }, [state, toast, onSuccess]);
 
-  function handleFormSubmit(data: FormData) {
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "itens" as any, 
+  });
+  
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
     const formData = new FormData();
     formData.append("tipo", data.tipo);
 
     if (data.tipo === 'nota_fiscal') {
       formData.append("numeroNotaFiscal", data.numeroNotaFiscal);
       formData.append("itens", JSON.stringify(data.itens.map(it => ({produtoId: it.produtoId, quantidade: it.quantidade}))));
-    } else { // ajuste
+    } else { 
       formData.append("produtoId", data.produtoId);
       formData.append("novoSaldo", String(data.novoSaldo));
     }
+    
+    try {
+        const result = await createEntrada(null, formData);
+        if (result.message && !result.errors) {
+            toast({
+                title: "Sucesso!",
+                description: result.message,
+            });
+            onSuccess();
+        } else {
+            toast({
+                title: "Erro na Operação",
+                description: result.message || "Ocorreu um erro desconhecido.",
+                variant: "destructive",
+            });
+        }
+    } catch (error) {
+         toast({
+            title: "Erro Inesperado",
+            description: "Não foi possível registrar a entrada.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
 
-    formAction(formData);
-  }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="nota_fiscal">Nota Fiscal</TabsTrigger>
             <TabsTrigger value="ajuste">Ajuste de Estoque</TabsTrigger>
           </TabsList>
 
-          {/* NOTA FISCAL */}
           <TabsContent value="nota_fiscal" className="space-y-4">
             <FormField
               control={form.control}
@@ -193,7 +202,6 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
             </div>
           </TabsContent>
 
-          {/* AJUSTE */}
           <TabsContent value="ajuste" className="space-y-4">
              <FormField
                 control={form.control}
@@ -231,8 +239,8 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
           </TabsContent>
         </Tabs>
         <div className="flex justify-end">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            Registrar Entrada
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Registrando..." : "Registrar Entrada"}
           </Button>
         </div>
       </form>
@@ -246,20 +254,23 @@ function ProductSearch({ onProductSelect, selectedProductId }: { onProductSelect
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      if (query.length < 2 && !selectedProductId) return;
+  
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      if (query.length < 2) {
+        setProducts([]);
+        return
+      };
       const response = await fetch(`/api/produtos?q=${query}`);
       const data: Product[] = await response.json();
       setProducts(data);
     }
     const debounce = setTimeout(fetchProducts, 300);
     return () => clearTimeout(debounce);
-  }, [query, selectedProductId]);
+  }, [query]);
 
-  useEffect(() => {
-    if(selectedProductId && products.length > 0) {
+  React.useEffect(() => {
+    if (selectedProductId && products.length > 0) {
       setSelectedProduct(products.find(p => p._id.toString() === selectedProductId) || null);
     } else if (!selectedProductId) {
        setSelectedProduct(null);
