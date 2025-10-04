@@ -53,8 +53,12 @@ export async function GET(request: Request) {
       {
         $addFields: {
           // Pega o saldo do primeiro (e único) item do array de estoqueInfo ou define como 0 se não existir
-          saldo: { $ifNull: [{ $arrayElemAt: ["$estoqueInfo.saldo", 0] }, 0] },
-          estoqueMinimo: { $ifNull: [{ $arrayElemAt: ["$estoqueInfo.estoqueMinimo", 0] }, 0] }
+          saldo: { 
+            $ifNull: [{ $arrayElemAt: ["$estoqueInfo.saldo", 0] }, 0] 
+          },
+          estoqueMinimo: { 
+            $ifNull: [{ $arrayElemAt: ["$estoqueInfo.estoqueMinimo", 0] }, 0] 
+          }
         }
       },
       {
