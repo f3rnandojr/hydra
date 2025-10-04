@@ -89,6 +89,19 @@ export async function POST(request: NextRequest) {
 
       const result = await db.collection("vendas").insertOne(vendaDoc as any, { session });
       
+      // Criar registro em contas_receber se for venda "À Pagar"
+      if (vendaData.formaPagamento === 'apagar' && vendaData.colaboradorId) {
+        await db.collection("contas_receber").insertOne({
+          vendaId: result.insertedId,
+          colaboradorId: new ObjectId(vendaData.colaboradorId),
+          valor: totalVenda,
+          dataVenda: new Date(),
+          status: "em_debito",
+          dataCriacao: new Date(),
+          dataAtualizacao: new Date()
+        }, { session });
+      }
+
       novaVenda = { ...vendaDoc, _id: result.insertedId.toString() };
       message = "Venda finalizada com sucesso!";
     });
