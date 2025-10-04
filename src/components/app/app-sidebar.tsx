@@ -1,8 +1,7 @@
-
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Users, Waves, Package, ShoppingCart, Settings, Coffee, LineChart } from "lucide-react";
+import { Users, Waves, Package, ShoppingCart, Settings, Coffee, LineChart, Warehouse } from "lucide-react";
 
 import {
   Sidebar,
@@ -12,11 +11,17 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const [relatoriosOpen, setRelatoriosOpen] = useState(pathname.startsWith('/relatorios'));
 
   return (
     <Sidebar collapsible="icon">
@@ -70,12 +75,24 @@ export function AppSidebar() {
            <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              isActive={pathname.startsWith("/relatorios")}
-              tooltip="Relatórios"
+              isActive={pathname === "/relatorios/vendas"}
+              tooltip="Relatório de Vendas"
             >
               <Link href="/relatorios/vendas">
                 <LineChart />
-                <span>Relatórios</span>
+                <span>Relatório de Vendas</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === "/relatorios/estoque"}
+              tooltip="Posição de Estoque"
+            >
+              <Link href="/relatorios/estoque">
+                <Warehouse />
+                <span>Posição de Estoque</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
