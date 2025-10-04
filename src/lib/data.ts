@@ -1,6 +1,6 @@
 import clientPromise from './mongodb';
-import { ObjectId, type WithId } from 'mongodb';
-import type { Collaborator } from './definitions';
+import { ObjectId, type WithId, MongoClient } from 'mongodb';
+import type { Collaborator, Product, Entry } from './definitions';
 import bcrypt from 'bcrypt';
 
 async function getDb() {
@@ -8,10 +8,10 @@ async function getDb() {
   return client.db('hydra');
 }
 
+// Collaborators Functions
 export async function getCollaborators(): Promise<Collaborator[]> {
   const db = await getDb();
   const collaborators = await db.collection('colaboradores').find({ deletedAt: null }).toArray();
-  // Convert _id to string for each document
   return collaborators.map(c => ({
     ...c,
     _id: c._id.toString(),
@@ -95,4 +95,109 @@ export async function deleteCollaborator(id: string): Promise<boolean> {
         { $set: { deletedAt: new Date() } }
     );
     return result.modifiedCount === 1;
+}
+
+// Products Functions
+export async function getProducts(): Promise<Product[]> {
+    const db = await getDb();
+    const products = await db.collection('produtos').find({ ativo: true }).toArray();
+    return products.map(p => ({
+        ...p,
+        _id: p._id.toString(),
+    })) as unknown as Product[];
+}
+
+export async function createProduct(data: Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>): Promise<WithId<Product>> {
+    const db = await getDb();
+    const newProduct = {
+        ...data,
+        estoqueMinimo: data.estoqueMinimo || null,
+        saldo: 0,
+        ativo: true,
+        dataCriacao: new Date(),
+        dataAtualizacao: new Date(),
+    };
+    const result = await db.collection('produtos').insertOne(newProduct);
+    return {
+        ...newProduct,
+        _id: result.insertedId,
+    };
+}
+
+export async function updateProduct(id: string, data: Partial<Omit<Product, '_id'>>): Promise<Product | null> {
+    if (!ObjectId.isValid(id)) {
+        return null;
+    }
+    const db = await getDb();
+    const result = await db.collection('produtos').findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: { ...data, dataAtualizacao: new Date() } },
+        { returnDocument: 'after' }
+    );
+    if (result) {
+        return { ...result, _id: result._id.toString() } as unknown as Product;
+    }
+    return null;
+}
+
+export async function deleteProduct(id: string): Promise<boolean> {
+    if (!ObjectId.isValid(id)) {
+        return false;
+    }
+    const db = await getDb();
+    const result = await db.collection('produtos').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { ativo: false, dataAtualizacao: new Date() } }
+    );
+    return result.modifiedCount === 1;
+}
+
+
+// Entries Functions
+export async function createEntry(data: Omit<Entry, '_id' | 'dataEntrada' | 'itens'> & { itens: Omit<Entry['itens'][0], 'saldoAnterior' | 'saldoAtual'>[] }, client: MongoClient) {
+    const db = client.db('hydra');
+    const session = client.startSession();
+
+    try {
+        await session.withTransaction(async () => {
+            const productsCollection = db.collection('produtos');
+            const entriesCollection = db.collection('entradas');
+
+            const processedItems: Entry['itens'] = [];
+
+            for (const item of data.itens) {
+                const product = await productsCollection.findOne({ _id: new ObjectId(item.produtoId) }, { session });
+                if (!product) {
+                    throw new Error(`Produto com ID ${item.produtoId} não encontrado.`);
+                }
+
+                const saldoAnterior = product.saldo;
+                const saldoAtual = saldoAnterior + item.quantidade;
+
+                await productsCollection.updateOne(
+                    { _id: new ObjectId(item.produtoId) },
+                    { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
+                    { session }
+                );
+
+                processedItems.push({
+                    ...item,
+                    produtoId: new ObjectId(item.produtoId),
+                    saldoAnterior,
+                    saldoAtual,
+                });
+            }
+
+            const newEntry = {
+                ...data,
+                itens: processedItems,
+                dataEntrada: new Date(),
+                usuarioId: new ObjectId(data.usuarioId),
+            };
+
+            await entriesCollection.insertOne(newEntry, { session });
+        });
+    } finally {
+        await session.endSession();
+    }
 }
