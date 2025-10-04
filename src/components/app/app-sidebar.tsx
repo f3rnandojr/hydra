@@ -98,6 +98,17 @@ export function AppSidebar() {
               </SidebarMenuButton>
              </Link>
           </SidebarMenuItem>
+           <SidebarMenuItem>
+             <Link href="/relatorios/vendas-v2">
+              <SidebarMenuButton
+                isActive={pathname === "/relatorios/vendas-v2"}
+                tooltip="Relatório de Vendas (V2)"
+              >
+                <LineChart className="text-green-500" />
+                <span>Relatório de Vendas (V2)</span>
+              </SidebarMenuButton>
+             </Link>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <Link href="/relatorios/estoque">
               <SidebarMenuButton
