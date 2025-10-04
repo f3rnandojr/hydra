@@ -24,7 +24,7 @@ export function VendaForm() {
   const [tipoCliente, setTipoCliente] = useState<"normal" | "colaborador">("normal");
 
   const adicionarItem = (produto: Product) => {
-     if (produto.saldo <= 0) {
+     if (produto.saldo <= 0 && tipoCliente === 'normal') {
       toast({
         title: "Produto sem estoque",
         description: `O produto "${produto.nome}" não está disponível no estoque.`,
@@ -38,7 +38,7 @@ export function VendaForm() {
     );
 
     if (itemExistente) {
-      if (itemExistente.quantidade >= produto.saldo) {
+      if (itemExistente.quantidade >= produto.saldo && tipoCliente === 'normal') {
         toast({
             title: "Limite de Estoque Atingido",
             description: `Você já adicionou todo o estoque disponível para "${produto.nome}".`,
@@ -78,7 +78,7 @@ export function VendaForm() {
     }
     
     const item = itensVenda.find(item => item.produto._id.toString() === produtoId);
-    if (item && quantidade > item.produto.saldo) {
+    if (item && quantidade > item.produto.saldo && tipoCliente === 'normal') {
        toast({
         title: "Estoque Insuficiente",
         description: `A quantidade para "${item.produto.nome}" não pode exceder o estoque de ${item.produto.saldo}.`,
@@ -154,7 +154,10 @@ export function VendaForm() {
       {/* Busca de Produtos */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Adicionar Produtos</h3>
-        <ProdutoSearchVenda onProductSelect={adicionarItem} />
+        <ProdutoSearchVenda 
+          onProductSelect={adicionarItem} 
+          tipoCliente={tipoCliente}
+        />
       </div>
 
       {/* Carrinho de Venda */}

@@ -7,11 +7,15 @@ export async function GET(request: Request) {
     const db = client.db("hydra");
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
+    const tipoCliente = searchParams.get('tipoCliente') || 'normal';
 
     let filter: any = { 
-        ativo: true,
-        saldo: { $gt: 0 } // Apenas produtos com estoque disponível
+        ativo: true
     };
+
+    if (tipoCliente === 'normal') {
+        filter.saldo = { $gt: 0 };
+    }
 
     if (query) {
       // Buscar por EAN exato OU nome (case insensitive)

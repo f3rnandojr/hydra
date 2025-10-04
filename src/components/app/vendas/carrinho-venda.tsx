@@ -95,7 +95,6 @@ export function CarrinhoVenda({ itens, onRemoverItem, onAtualizarQuantidade }: V
                     <Input
                       type="number"
                       min="1"
-                      max={item.produto.saldo}
                       value={item.quantidade}
                       onChange={(e) => handleQuantityChange(item, parseInt(e.target.value) || 1)}
                       className="w-16 text-center"

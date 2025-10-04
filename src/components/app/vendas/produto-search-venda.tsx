@@ -22,9 +22,10 @@ import { Input } from "@/components/ui/input";
 
 interface VendaProdutoSearchProps {
   onProductSelect: (produto: Product) => void;
+  tipoCliente: "normal" | "colaborador";
 }
 
-export function ProdutoSearchVenda({ onProductSelect }: VendaProdutoSearchProps) {
+export function ProdutoSearchVenda({ onProductSelect, tipoCliente }: VendaProdutoSearchProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [produtos, setProdutos] = useState<Product[]>([]);
@@ -39,7 +40,7 @@ export function ProdutoSearchVenda({ onProductSelect }: VendaProdutoSearchProps)
 
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/produtos?q=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/produtos?q=${encodeURIComponent(query)}&tipoCliente=${tipoCliente}`);
         const data = await response.json();
         setProdutos(data);
         if (data.length > 0) {
@@ -63,7 +64,7 @@ export function ProdutoSearchVenda({ onProductSelect }: VendaProdutoSearchProps)
       const timeoutId = setTimeout(buscarProdutos, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [query]);
+  }, [query, tipoCliente]);
 
   const handleSelecionarProduto = (produto: Product) => {
     onProductSelect(produto);
