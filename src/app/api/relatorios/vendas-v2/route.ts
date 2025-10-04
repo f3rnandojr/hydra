@@ -55,26 +55,6 @@ export async function GET(request: NextRequest) {
       filtro.cafeteria = cafeteria;
     }
 
-    // ================= DEBUG BLOCK START =================
-    console.log('--- INICIANDO DEBUG ESTRUTURAL ---');
-    const userCount = await db.collection('usuarios').countDocuments();
-    const collabCount = await db.collection('colaboradores').countDocuments();
-    console.log(`Coleção 'usuarios' existe e tem ${userCount} documentos.`);
-    console.log(`Coleção 'colaboradores' existe e tem ${collabCount} documentos.`);
-
-    const primeiraVenda = await db.collection('vendas').findOne(filtro, { sort: { dataVenda: -1 } });
-    if (primeiraVenda) {
-        console.log('Tipo de usuarioId na venda:', typeof primeiraVenda.usuarioId, `(É ObjectId: ${ObjectId.isValid(primeiraVenda.usuarioId)})`);
-        
-        const manualUserLookup = await db.collection('usuarios').findOne({ _id: primeiraVenda.usuarioId });
-        console.log('Resultado do lookup manual:', manualUserLookup ? `ENCONTRADO: ${manualUserLookup.nome}` : 'NÃO ENCONTRADO');
-    } else {
-        console.log('Nenhuma venda encontrada para o filtro, debug manual não pode prosseguir.');
-    }
-    console.log('--- FIM DEBUG ESTRUTURAL ---');
-    // ================= DEBUG BLOCK END =================
-
-    
     const aggregatePipeline: any[] = [
       {
         $match: filtro
@@ -82,10 +62,35 @@ export async function GET(request: NextRequest) {
       {
         $sort: { dataVenda: -1 }
       },
+      // CORREÇÃO: Garantir que os IDs sejam ObjectIds para o lookup
+      {
+        $addFields: {
+          usuarioIdObj: { 
+            $cond: {
+              if: { $eq: [{ $type: "$usuarioId" }, "objectId"] },
+              then: "$usuarioId",
+              else: { $toObjectId: "$usuarioId" }
+            }
+          },
+          colaboradorIdObj: {
+            $cond: {
+              if: { $and: ["$colaboradorId", { $ne: ["$colaboradorId", ""] }] },
+              then: {
+                $cond: {
+                  if: { $eq: [{ $type: "$colaboradorId" }, "objectId"] },
+                  then: "$colaboradorId",
+                  else: { $toObjectId: "$colaboradorId" }
+                }
+              },
+              else: null
+            }
+          }
+        }
+      },
       {
         $lookup: {
           from: "usuarios",
-          localField: "usuarioId",
+          localField: "usuarioIdObj", // ← Usar o ObjectId convertido
           foreignField: "_id",
           as: "usuario"
         }
@@ -93,7 +98,7 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: "colaboradores",
-          localField: "colaboradorId", 
+          localField: "colaboradorIdObj", // ← Usar o ObjectId convertido  
           foreignField: "_id",
           as: "colaborador"
         }
@@ -107,7 +112,9 @@ export async function GET(request: NextRequest) {
       {
         $project: {
           "usuario.senha": 0,
-          "colaborador.senha": 0
+          "colaborador.senha": 0,
+          usuarioIdObj: 0, // ← Remover campos temporários
+          colaboradorIdObj: 0
         }
       }
     ];
