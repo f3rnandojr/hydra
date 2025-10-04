@@ -1,6 +1,7 @@
 import { getProducts } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateProductButton } from "@/components/app/produtos/buttons";
+import { CreateEntradaButton } from "@/components/app/entradas/buttons";
 import { ProductsTable } from "@/components/app/produtos/table";
 
 export default async function ProdutosPage() {
@@ -11,6 +12,7 @@ export default async function ProdutosPage() {
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Produtos</h1>
         <div className="ml-auto flex items-center gap-2">
+          <CreateEntradaButton />
           <CreateProductButton />
         </div>
       </div>
