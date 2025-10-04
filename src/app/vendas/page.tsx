@@ -7,7 +7,29 @@ export default async function VendasPage() {
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Ponto de Venda</h1>
       </div>
-      <VendaForm />
+       <div className="grid gap-6">
+        {/* Card da Venda Atual */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Nova Venda</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <VendaForm />
+          </CardContent>
+        </Card>
+
+        {/* Card com Vendas Recentes (futuro) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Vendas do Dia</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Lista de vendas recentes será exibida aqui.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

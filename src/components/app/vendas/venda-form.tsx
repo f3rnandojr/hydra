@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Product, ItemVenda } from "@/lib/definitions";
+import type { Product, ItemVenda } from "@/lib/definitions";
 
 import { Button } from "@/components/ui/button";
 import { ProdutoSearchVenda } from "./produto-search-venda";
 import { CarrinhoVenda } from "./carrinho-venda";
-import { Card, CardContent } from "@/components/ui/card";
+import { useForm, useFieldArray } from "react-hook-form";
+import { z } from "zod";
 
 const vendaSchema = z.object({
   itens: z
@@ -29,78 +27,73 @@ const vendaSchema = z.object({
 
 type VendaFormData = z.infer<typeof vendaSchema>;
 
+
 export function VendaForm() {
-  const form = useForm<VendaFormData>({
-    resolver: zodResolver(vendaSchema),
-    defaultValues: {
-      itens: [],
-      total: 0,
-    },
-  });
+    const { register, control, handleSubmit, watch, setValue } = useForm<VendaFormData>({
+        defaultValues: {
+            itens: [],
+            total: 0,
+        }
+    });
 
-  const { fields, append, remove, update } = useFieldArray({
-    control: form.control,
-    name: "itens",
-  });
+    const { fields, append, remove, update } = useFieldArray({
+        control,
+        name: "itens",
+    });
 
-  const handleProductSelect = (product: Product) => {
-    // Mock price, replace with real price logic later
-    const mockPrice = Math.floor(Math.random() * 20) + 5;
-    
-    const existingItemIndex = fields.findIndex(
-      (item) => item.produtoId === product._id
-    );
+    const handleProductSelect = (product: Product) => {
+        const mockPrice = Math.floor(Math.random() * 20) + 5;
+        
+        const existingItemIndex = fields.findIndex(
+        (item) => item.produtoId === product._id
+        );
 
-    if (existingItemIndex > -1) {
-      const existingItem = fields[existingItemIndex];
-      update(existingItemIndex, {
-        ...existingItem,
-        quantidade: existingItem.quantidade + 1,
-        subtotal: (existingItem.quantidade + 1) * existingItem.precoUnitario,
-      });
-    } else {
-      append({
-        produtoId: product._id,
-        nomeProduto: product.nome,
-        codigoEAN: product.codigoEAN || undefined,
-        quantidade: 1,
-        precoUnitario: mockPrice,
-        subtotal: mockPrice,
-      });
-    }
-  };
-  
-  const total = fields.reduce((acc, item) => acc + item.subtotal, 0);
+        if (existingItemIndex > -1) {
+            const existingItem = fields[existingItemIndex];
+            update(existingItemIndex, {
+                ...existingItem,
+                quantidade: existingItem.quantidade + 1,
+                subtotal: (existingItem.quantidade + 1) * existingItem.precoUnitario,
+            });
+        } else {
+            append({
+                produtoId: product._id,
+                nomeProduto: product.nome,
+                codigoEAN: product.codigoEAN || undefined,
+                quantidade: 1,
+                precoUnitario: mockPrice,
+                subtotal: mockPrice,
+            });
+        }
+    };
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Coluna da Venda (Busca e Carrinho) */}
-      <div className="lg:col-span-2 space-y-6">
-        <div>
-          <label className="text-sm font-medium">Buscar Produto (Nome ou EAN)</label>
-          <ProdutoSearchVenda onProductSelect={handleProductSelect} />
-        </div>
-        <Card>
-          <CardContent className="p-4">
-             <CarrinhoVenda itens={fields} onRemove={remove} onUpdate={update} />
-          </CardContent>
-        </Card>
+    const total = watch("itens").reduce((acc, item) => acc + item.subtotal, 0);
+
+    return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Adicionar Produtos</h3>
+        <ProdutoSearchVenda onProductSelect={handleProductSelect} />
       </div>
 
-      {/* Coluna do Resumo e Finalização */}
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Total da Venda</h2>
-            <div className="text-4xl font-bold text-right">
-              R$ {total.toFixed(2)}
-            </div>
-             <Button className="w-full" size="lg" disabled={fields.length === 0}>
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Itens da Venda</h3>
+        <CarrinhoVenda itens={fields} onRemove={remove} onUpdate={update} />
+      </div>
+
+      <div className="border-t pt-4">
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-semibold">Total:</span>
+          <span className="text-2xl font-bold">
+            R$ {total.toFixed(2)}
+          </span>
+        </div>
+      </div>
+       <div className="flex justify-end">
+            <Button size="lg" disabled={fields.length === 0}>
                 Finalizar Venda
             </Button>
-          </CardContent>
-        </Card>
-      </div>
+       </div>
     </div>
-  );
+    );
 }

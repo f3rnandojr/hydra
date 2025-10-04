@@ -8,7 +8,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
 
-    let filter: any = { ativo: true };
+    let filter: any = { 
+        ativo: true,
+        saldo: { $gt: 0 } // Apenas produtos com estoque disponível
+    };
 
     if (query) {
       // Buscar por EAN exato OU nome (case insensitive)
@@ -28,7 +31,7 @@ export async function GET(request: Request) {
       .limit(50) 
       .toArray();
     
-    return NextResponse.json(produtos);
+    return NextResponse.json(produtos.map(p => ({...p, _id: p._id.toString()})));
   } catch (error) {
     console.error("Falha ao buscar produtos:", error);
     return NextResponse.json({ error: "Falha ao buscar produtos" }, { status: 500 });
