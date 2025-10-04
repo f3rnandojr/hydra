@@ -16,6 +16,7 @@ export type Product = {
   nome: string;
   tipo: "alimento" | "bebida";
   codigoEAN?: string | null;
+  precoVenda: number;
   estoqueMinimo?: number | null;
   saldo: number;
   ativo: boolean;

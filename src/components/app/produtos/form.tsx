@@ -37,6 +37,7 @@ const productSchema = z.object({
     .refine((ean) => !ean || validarEAN13(ean), {
       message: "Código EAN-13 inválido"
     }),
+  precoVenda: z.coerce.number().min(0.01, "Preço de venda deve ser maior que zero"),
   estoqueMinimo: z.coerce.number().optional().nullable(),
 });
 
@@ -58,6 +59,7 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
       nome: product?.nome || "",
       tipo: product?.tipo || "alimento",
       codigoEAN: product?.codigoEAN || "",
+      precoVenda: product?.precoVenda || undefined,
       estoqueMinimo: product?.estoqueMinimo || null,
     },
   });
@@ -70,6 +72,9 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
     formData.append('tipo', data.tipo);
     if (data.codigoEAN) {
       formData.append('codigoEAN', data.codigoEAN);
+    }
+     if (data.precoVenda !== null && data.precoVenda !== undefined) {
+      formData.append('precoVenda', String(data.precoVenda));
     }
     if (data.estoqueMinimo !== null && data.estoqueMinimo !== undefined) {
       formData.append('estoqueMinimo', String(data.estoqueMinimo));
@@ -160,6 +165,29 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
                     <FormMessage />
                 </FormItem>
             )}
+        />
+        <FormField
+          control={form.control}
+          name="precoVenda"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Preço de Venda (R$)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  {...field}
+                  value={field.value ?? ''}
+                   onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                />
+              </FormControl>
+              <FormDescription>
+                Preço unitário de venda do produto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
         />
         <FormField
           control={form.control}

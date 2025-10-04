@@ -19,6 +19,7 @@ const productSchema = z.object({
     .refine((ean) => !ean || validarEAN13(ean), {
       message: "Código EAN-13 inválido"
     }),
+  precoVenda: z.coerce.number().min(0.01, "Preço de venda deve ser maior que zero"),
   estoqueMinimo: z.coerce.number().optional().nullable(),
 });
 

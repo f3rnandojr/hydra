@@ -124,6 +124,7 @@ export async function createProduct(data: Partial<Omit<Product, '_id' | 'dataCri
         nome: data.nome!,
         tipo: data.tipo!,
         codigoEAN: data.codigoEAN || null,
+        precoVenda: data.precoVenda || 0,
         estoqueMinimo: data.estoqueMinimo || null,
         saldo: 0,
         ativo: true,
