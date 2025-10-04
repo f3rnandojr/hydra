@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           throw new Error(`Produto "${item.nomeProduto}" não encontrado ou inativo.`);
         }
 
-        if (produto.saldo < item.quantidade) {
+        if (vendaData.tipoCliente === 'normal' && produto.saldo < item.quantidade) {
           throw new Error(`Estoque insuficiente para o produto "${produto.nome}". Disponível: ${produto.saldo}, Solicitado: ${item.quantidade}.`);
         }
       }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       const vendaDoc: Omit<Venda, '_id'> = {
         numeroVenda: proximoNumero.toString().padStart(8, '0'),
         dataVenda: new Date(),
-        cafeteria: vendaData.cafeteria,
+        cafeteria: vendaData.cafeteria as any,
         tipoCliente: vendaData.tipoCliente,
         colaboradorId: vendaData.colaboradorId,
         itens: itens.map(it => ({...it, produtoId: it.produtoId})),
