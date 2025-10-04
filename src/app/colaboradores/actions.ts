@@ -11,7 +11,7 @@ import {
 const collaboratorSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres."),
   email: z.string().email("Email inválido."),
-  status: z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean()),
+  status: z.boolean().default(true),
 });
 
 const createCollaboratorSchema = collaboratorSchema.extend({
