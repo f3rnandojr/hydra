@@ -1,4 +1,3 @@
-
 "use server";
 
 import { z } from "zod";
@@ -55,8 +54,8 @@ export async function createEntrada(prevState: any, formData: FormData) {
   const client = await clientPromise;
   const session = client.startSession();
   
+  let message = "";
   try {
-    let message = "";
     await session.withTransaction(async () => {
       const db = client.db("hydra");
       const data = validatedFields.data;
