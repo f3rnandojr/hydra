@@ -11,7 +11,7 @@ import {
 const collaboratorSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres."),
   email: z.string().email("Email inválido."),
-  status: z.boolean(),
+  status: z.preprocess((val) => val === 'on' || val === 'true' || val === true, z.boolean()),
 });
 
 const createCollaboratorSchema = collaboratorSchema.extend({
@@ -37,7 +37,7 @@ export async function createCollaborator(prevState: any, formData: FormData) {
   
   try {
     const { nome, email, senha, status } = validatedFields.data;
-    await dbCreateCollaborator({ nome, email, senha, status: status === 'on' });
+    await dbCreateCollaborator({ nome, email, senha, status });
     revalidatePath("/colaboradores");
     return { message: "Colaborador criado com sucesso." };
   } catch (e) {
@@ -61,7 +61,6 @@ export async function updateCollaborator(id: string, prevState: any, formData: F
         const { senha, ...rest } = validatedFields.data;
         const dataToUpdate: any = {
             ...rest,
-            status: rest.status === 'on'
         };
 
         if (senha) {
