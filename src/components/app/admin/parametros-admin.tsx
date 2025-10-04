@@ -114,10 +114,12 @@ export function ParametrosAdmin() {
   
   if (usuario?.tipo !== 'gestor') {
     return (
-        <div className="flex flex-col items-center justify-center h-full text-center py-10">
-            <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
-            <p className="text-muted-foreground">Esta área é restrita para gestores.</p>
-        </div>
+        <Card>
+            <CardHeader><CardTitle>Acesso Negado</CardTitle></CardHeader>
+            <CardContent>
+                <p>Esta área é restrita para gestores.</p>
+            </CardContent>
+        </Card>
     );
   }
 
@@ -132,70 +134,54 @@ export function ParametrosAdmin() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Parâmetros do Sistema</h1>
-          <p className="text-muted-foreground">
-            Configure as settings globais do sistema
-          </p>
-        </div>
-        <Button 
-          onClick={salvarParametros} 
-          disabled={salvando}
-          className="flex items-center gap-2"
-        >
-          {salvando ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {salvando ? "Salvando..." : "Salvar Alterações"}
-        </Button>
-      </div>
+    <Card>
+        <CardHeader>
+            <CardTitle>Parâmetros Gerais do Sistema</CardTitle>
+            <CardDescription>
+                Configure as settings globais do sistema.
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+            {parametros.map((parametro) => (
+                <div key={parametro._id} className="grid gap-2 border-b pb-4">
+                    <Label htmlFor={parametro.chave} className="font-semibold">{parametro.chave}</Label>
+                    <p className="text-sm text-muted-foreground">{parametro.descricao}</p>
+                    <Input
+                        id={parametro.chave}
+                        value={valoresEditados[parametro.chave] || ""}
+                        onChange={(e) => handleValorChange(parametro.chave, e.target.value)}
+                        placeholder={`Digite o valor para ${parametro.chave}`}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                        Última atualização: {new Date(parametro.dataAtualizacao).toLocaleString('pt-BR')}
+                    </div>
+                </div>
+            ))}
 
-      <div className="grid gap-6">
-        {parametros.map((parametro) => (
-          <Card key={parametro._id}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                {parametro.chave}
-              </CardTitle>
-              <CardDescription>
-                {parametro.descricao}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor={parametro.chave}>Valor</Label>
-                <Input
-                  id={parametro.chave}
-                  value={valoresEditados[parametro.chave] || ""}
-                  onChange={(e) => handleValorChange(parametro.chave, e.target.value)}
-                  placeholder={`Digite o valor para ${parametro.chave}`}
-                />
-              </div>
-              
-              <div className="text-xs text-muted-foreground">
-                Última atualização: {new Date(parametro.dataAtualizacao).toLocaleString('pt-BR')}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {parametros.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum parâmetro encontrado</h3>
-              <p className="text-muted-foreground">
-                Os parâmetros do sistema ainda não foram configurados.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
+            {parametros.length === 0 && (
+                <div className="py-8 text-center">
+                    <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Nenhum parâmetro encontrado</h3>
+                    <p className="text-muted-foreground">
+                        Os parâmetros do sistema ainda não foram configurados.
+                    </p>
+                </div>
+            )}
+        </CardContent>
+        <CardFooter className="border-t px-6 py-4">
+             <Button 
+                onClick={salvarParametros} 
+                disabled={salvando}
+                className="flex items-center gap-2"
+                >
+                {salvando ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                    <Save className="h-4 w-4" />
+                )}
+                {salvando ? "Salvando..." : "Salvar Parâmetros Gerais"}
+                </Button>
+        </CardFooter>
+    </Card>
   );
 }
