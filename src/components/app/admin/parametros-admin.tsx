@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -32,7 +31,7 @@ export function ParametrosAdmin() {
   const carregarParametros = async () => {
     try {
       setCarregando(true);
-      const response = await fetch('/api/parametros'); // Busca todos os parâmetros
+      const response = await fetch('/api/parametros'); // Rota corrigida
       if (response.ok) {
         const data = await response.json();
         setParametros(data);
