@@ -1,6 +1,6 @@
 import clientPromise from './mongodb';
-import { ObjectId, type WithId, MongoClient } from 'mongodb';
-import type { Collaborator, Product, Entry, EntryItem } from './definitions';
+import { ObjectId, type WithId } from 'mongodb';
+import type { Collaborator, Product } from './definitions';
 import bcrypt from 'bcrypt';
 
 async function getDb() {
@@ -23,9 +23,9 @@ export async function getCollaboratorById(id: string): Promise<Collaborator | un
     return undefined;
   }
   const db = await getDb();
-  const collaborator = await db.collection('colaboradores').findOne({ _id: new ObjectId(id) });
-  if (collaborator) {
-    const { senha, ...rest } = collaborator;
+  const collaboratorDoc = await db.collection('colaboradores').findOne({ _id: new ObjectId(id) });
+  if (collaboratorDoc) {
+    const { senha, ...rest } = collaboratorDoc;
     return {
         ...rest,
         _id: rest._id.toString(),
@@ -34,7 +34,7 @@ export async function getCollaboratorById(id: string): Promise<Collaborator | un
   return undefined;
 }
 
-export async function createCollaborator(data: Omit<Collaborator, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'deletedAt'>): Promise<WithId<Collaborator>> {
+export async function createCollaborator(data: Omit<Collaborator, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'deletedAt'>): Promise<Collaborator> {
     const db = await getDb();
     
     const hashedPassword = await bcrypt.hash(data.senha!, 10);
@@ -51,8 +51,8 @@ export async function createCollaborator(data: Omit<Collaborator, '_id' | 'dataC
     
     return {
         ...newCollaborator,
-        _id: result.insertedId,
-    };
+        _id: result.insertedId.toString(),
+    } as Collaborator;
 }
 
 export async function updateCollaborator(id: string, data: Partial<Omit<Collaborator, '_id'>>): Promise<Collaborator | null> {
@@ -107,7 +107,7 @@ export async function getProducts(): Promise<Product[]> {
     })) as unknown as Product[];
 }
 
-export async function createProduct(data: Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>): Promise<WithId<Product>> {
+export async function createProduct(data: Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>): Promise<Product> {
     const db = await getDb();
     const newProduct = {
         ...data,
@@ -120,8 +120,8 @@ export async function createProduct(data: Omit<Product, '_id' | 'dataCriacao' | 
     const result = await db.collection('produtos').insertOne(newProduct);
     return {
         ...newProduct,
-        _id: result.insertedId,
-    };
+        _id: result.insertedId.toString(),
+    } as Product;
 }
 
 export async function updateProduct(id: string, data: Partial<Omit<Product, '_id'>>): Promise<Product | null> {

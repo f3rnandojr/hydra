@@ -1,7 +1,7 @@
 import type { ObjectId } from 'mongodb';
 
 export type Collaborator = {
-  _id: string | ObjectId;
+  _id: string;
   nome: string;
   email: string;
   senha?: string;
@@ -12,7 +12,7 @@ export type Collaborator = {
 };
 
 export type Product = {
-  _id: string | ObjectId;
+  _id: string;
   nome: string;
   tipo: "alimento" | "bebida";
   estoqueMinimo?: number | null;
