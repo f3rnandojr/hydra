@@ -35,8 +35,10 @@ export function AppSidebar() {
               tooltip="Colaboradores"
             >
               <Link href="/colaboradores">
-                <Users />
-                <span>Colaboradores</span>
+                <div className="flex items-center gap-2">
+                  <Users />
+                  <span>Colaboradores</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -47,8 +49,10 @@ export function AppSidebar() {
               tooltip="Produtos"
             >
               <Link href="/produtos">
-                <Package />
-                <span>Produtos</span>
+                <div className="flex items-center gap-2">
+                  <Package />
+                  <span>Produtos</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -59,8 +63,10 @@ export function AppSidebar() {
               tooltip="Vendas"
             >
               <Link href="/vendas">
-                <ShoppingCart />
-                <span>Vendas</span>
+                <div className="flex items-center gap-2">
+                  <ShoppingCart />
+                  <span>Vendas</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -71,8 +77,10 @@ export function AppSidebar() {
               tooltip="Relatório de Vendas"
             >
               <Link href="/relatorios/vendas">
-                <LineChart />
-                <span>Relatório de Vendas</span>
+                <div className="flex items-center gap-2">
+                    <LineChart />
+                    <span>Relatório de Vendas</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -83,8 +91,10 @@ export function AppSidebar() {
               tooltip="Posição de Estoque"
             >
               <Link href="/relatorios/estoque">
-                <Warehouse />
-                <span>Posição de Estoque</span>
+                <div className="flex items-center gap-2">
+                    <Warehouse />
+                    <span>Posição de Estoque</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -95,8 +105,10 @@ export function AppSidebar() {
               tooltip="Cafeterias"
             >
               <Link href="/cafeterias">
-                <Coffee />
-                <span>Cafeterias</span>
+                <div className="flex items-center gap-2">
+                  <Coffee />
+                  <span>Cafeterias</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -107,8 +119,10 @@ export function AppSidebar() {
               tooltip="Parâmetros"
             >
               <Link href="/admin">
-                <Settings />
-                <span>Parâmetros</span>
+                <div className="flex items-center gap-2">
+                  <Settings />
+                  <span>Parâmetros</span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
