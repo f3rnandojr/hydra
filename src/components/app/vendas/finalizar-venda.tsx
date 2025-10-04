@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Users, User } from "lucide-react";
+import { Check, Users, User, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Product, Collaborator } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface FinalizarVendaProps {
   open: boolean;
@@ -45,30 +46,45 @@ export function FinalizarVenda({
   const { toast } = useToast();
   const [colaboradorId, setColaboradorId] = useState("");
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
-  const [cafeteria, setCafeteria] = useState<"cafeteria_1" | "cafeteria_2">("cafeteria_1");
+  const [cafeteriaAtiva, setCafeteriaAtiva] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Buscar colaboradores ativos
+  // Buscar colaboradores e cafeteria ativa
   useEffect(() => {
-    async function fetchColaboradores() {
+    async function fetchData() {
+      setIsLoading(true);
+      setError(null);
       try {
-        const response = await fetch('/api/colaboradores?status=ativo');
-        const data = await response.json();
-        setColaboradores(data);
-      } catch (error) {
-        console.error('Erro ao buscar colaboradores:', error);
-         toast({
-          title: "Erro ao buscar colaboradores",
-          description: "Não foi possível carregar la lista de colaboradores.",
-          variant: "destructive",
-        });
+        // Buscar cafeteria ativa
+        const cafeteriaRes = await fetch('/api/parametros');
+        if (!cafeteriaRes.ok) {
+          throw new Error("Não foi possível carregar a configuração da cafeteria. Contate o suporte.");
+        }
+        const cafeteriaParam = await cafeteriaRes.json();
+        setCafeteriaAtiva(cafeteriaParam.valor);
+
+        // Buscar colaboradores se necessário
+        if (tipoCliente === 'colaborador') {
+          const colabRes = await fetch('/api/colaboradores?status=ativo');
+           if (!colabRes.ok) {
+             throw new Error("Não foi possível carregar a lista de colaboradores.");
+           }
+          const colabData = await colabRes.json();
+          setColaboradores(colabData);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Erro ao buscar dados para finalização:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     
-    if (open && tipoCliente === 'colaborador') {
-      fetchColaboradores();
+    if (open) {
+      fetchData();
     }
-  }, [open, tipoCliente, toast]);
+  }, [open, tipoCliente]);
   
   // Resetar colaborador selecionado quando o tipo de cliente muda
   useEffect(() => {
@@ -85,9 +101,14 @@ export function FinalizarVenda({
 
   const handleFinalizarVenda = async () => {
     setIsLoading(true);
+    setError(null);
     try {
+      if (!cafeteriaAtiva) {
+        throw new Error("A cafeteria ativa não está configurada.");
+      }
+
       const vendaData = {
-        cafeteria,
+        cafeteria: cafeteriaAtiva,
         tipoCliente,
         colaboradorId: tipoCliente === "colaborador" ? colaboradorId : undefined,
         itens: itens.map(item => ({
@@ -111,23 +132,27 @@ export function FinalizarVenda({
       if (response.ok) {
         onVendaFinalizada();
         onOpenChange(false);
-        // Reset form
-        setColaboradorId("");
+        setColaboradorId(""); // Reset form
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao finalizar venda');
+        const errorResult = await response.json();
+        throw new Error(errorResult.message || 'Erro desconhecido ao finalizar venda');
       }
-    } catch (error: any) {
-      console.error('Erro:', error);
-       toast({
+    } catch (err: any) {
+      setError(err.message);
+      toast({
         title: "Erro ao Finalizar Venda",
-        description: error.message || 'Não foi possível registrar a venda.',
+        description: err.message || 'Não foi possível registrar a venda.',
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isFinalizarDisabled = isLoading || 
+                              !cafeteriaAtiva || 
+                              !!error ||
+                              (tipoCliente === "colaborador" && !colaboradorId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -141,21 +166,17 @@ export function FinalizarVenda({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Cafeteria */}
-          <div className="space-y-3">
-            <Label htmlFor="cafeteria">Cafeteria</Label>
-            <Select value={cafeteria} onValueChange={(value: "cafeteria_1" | "cafeteria_2") => setCafeteria(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cafeteria_1">Cafeteria 1</SelectItem>
-                <SelectItem value="cafeteria_2">Cafeteria 2</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {error && (
+            <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Erro de Configuração</AlertTitle>
+                <AlertDescription>
+                    {error}
+                </AlertDescription>
+            </Alert>
+        )}
 
+        <div className="space-y-6">
           {/* Tipo de Cliente (Informativo) */}
           <div className="space-y-3">
              <Label>Tipo de Cliente</Label>
@@ -178,12 +199,11 @@ export function FinalizarVenda({
             </div>
           </div>
 
-
           {/* Seleção de Colaborador (se for venda para colaborador) */}
           {tipoCliente === "colaborador" && (
             <div className="space-y-3">
               <Label htmlFor="colaborador">Colaborador *</Label>
-              <Select value={colaboradorId} onValueChange={setColaboradorId}>
+              <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o colaborador" />
                 </SelectTrigger>
@@ -238,7 +258,7 @@ export function FinalizarVenda({
           </Button>
           <Button
             onClick={handleFinalizarVenda}
-            disabled={isLoading || (tipoCliente === "colaborador" && !colaboradorId)}
+            disabled={isFinalizarDisabled}
             className="gap-2"
           >
             <Check className="h-4 w-4" />
