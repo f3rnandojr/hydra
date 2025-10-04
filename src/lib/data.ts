@@ -11,7 +11,7 @@ async function getDb() {
 // Collaborators Functions
 export async function getCollaborators(): Promise<Collaborator[]> {
   const db = await getDb();
-  const collaborators = await db.collection('colaboradores').find({ deletedAt: null }).toArray();
+  const collaborators = await db.collection('colaboradores').find({ deletedAt: null }).sort({ nome: 1 }).toArray();
   return collaborators.map(c => ({
     ...c,
     _id: c._id.toString(),
@@ -100,7 +100,7 @@ export async function deleteCollaborator(id: string): Promise<boolean> {
 // Products Functions
 export async function getProducts(): Promise<Product[]> {
     const db = await getDb();
-    const products = await db.collection('produtos').find({ ativo: true }).toArray();
+    const products = await db.collection('produtos').find({ ativo: true }).sort({ nome: 1 }).toArray();
     return products.map(p => ({
         ...p,
         _id: p._id.toString(),
@@ -150,62 +150,4 @@ export async function deleteProduct(id: string): Promise<boolean> {
         { $set: { ativo: false, dataAtualizacao: new Date() } }
     );
     return result.modifiedCount === 1;
-}
-
-
-// Entries Functions
-export async function createEntry(data: Omit<Entry, '_id' | 'dataEntrada' | 'itens' | 'usuarioId'> & { itens: Omit<EntryItem, 'saldoAnterior' | 'saldoAtual' | 'produtoId'> & {produtoId: string} [], usuarioId: string }) {
-    const client = await clientPromise;
-    const session = client.startSession();
-    const db = client.db('hydra');
-
-    try {
-        await session.withTransaction(async () => {
-            const productsCollection = db.collection('produtos');
-            const entriesCollection = db.collection('entradas');
-
-            const processedItems: EntryItem[] = [];
-
-            for (const item of data.itens) {
-                if (!ObjectId.isValid(item.produtoId)) {
-                     throw new Error(`ID de produto inválido: ${item.produtoId}`);
-                }
-                const produtoId = new ObjectId(item.produtoId);
-
-                const product = await productsCollection.findOne({ _id: produtoId }, { session });
-                if (!product) {
-                    throw new Error(`Produto com ID ${item.produtoId} não encontrado.`);
-                }
-
-                const saldoAnterior = product.saldo;
-                const saldoAtual = saldoAnterior + item.quantidade;
-
-                await productsCollection.updateOne(
-                    { _id: produtoId },
-                    { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
-                    { session }
-                );
-
-                processedItems.push({
-                    produtoId: produtoId,
-                    quantidade: item.quantidade,
-                    saldoAnterior,
-                    saldoAtual,
-                });
-            }
-
-            const newEntry = {
-                tipo: data.tipo,
-                numeroNotaFiscal: data.numeroNotaFiscal,
-                observacao: data.observacao,
-                itens: processedItems,
-                dataEntrada: new Date(),
-                usuarioId: new ObjectId(data.usuarioId),
-            };
-
-            await entriesCollection.insertOne(newEntry, { session });
-        });
-    } finally {
-        await session.endSession();
-    }
 }
