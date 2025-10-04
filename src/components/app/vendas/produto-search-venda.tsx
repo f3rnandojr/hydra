@@ -1,92 +1,133 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Product } from '@/lib/definitions';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { useState, useEffect } from "react";
+import { Search, Barcode } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import type { Product } from "@/lib/definitions";
 
-interface ProdutoSearchVendaProps {
-  onProductSelect: (product: Product) => void;
+interface VendaProdutoSearchProps {
+  onProductSelect: (produto: Product) => void;
 }
 
-export function ProdutoSearchVenda({ onProductSelect }: ProdutoSearchVendaProps) {
+export function ProdutoSearchVenda({ onProductSelect }: VendaProdutoSearchProps) {
+  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const fetchProducts = useCallback(async (searchQuery: string) => {
-    if (searchQuery.length < 1) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-    try {
-      const response = await fetch(`/api/produtos?q=${encodeURIComponent(searchQuery)}`);
-      const data: Product[] = await response.json();
-      setResults(data);
-      setIsOpen(true);
-
-      // Auto-select if EAN returns one exact match
-      if (/^\d{13}$/.test(searchQuery) && data.length === 1) {
-        handleSelect(data[0]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch products:", error);
-      setResults([]);
-      setIsOpen(false);
-    }
-  }, []);
+  const [produtos, setProdutos] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    async function buscarProdutos() {
+      if (query.length < 1) {
+        setProdutos([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/produtos?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        setProdutos(data);
+        if (data.length > 0) {
+            setOpen(true);
+        }
+        if (/^\d{13}$/.test(query) && data.length === 1) {
+          handleSelecionarProduto(data[0]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        setProdutos([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     const isEAN = /^\d{13}$/.test(query);
     if (isEAN) {
-      fetchProducts(query);
+      buscarProdutos();
     } else {
-      const debounce = setTimeout(() => {
-        if (query) fetchProducts(query);
-      }, 300);
-      return () => clearTimeout(debounce);
+      const timeoutId = setTimeout(buscarProdutos, 300);
+      return () => clearTimeout(timeoutId);
     }
-  }, [query, fetchProducts]);
+  }, [query]);
 
-  const handleSelect = (product: Product) => {
-    onProductSelect(product);
+  const handleSelecionarProduto = (produto: Product) => {
+    onProductSelect(produto);
     setQuery("");
-    setResults([]);
-    setIsOpen(false);
-    const input = document.getElementById("product-search-input");
-    if (input) (input as HTMLInputElement).focus();
+    setOpen(false);
   };
 
   return (
-    <div className="relative">
-      <Command shouldFilter={false} className="overflow-visible">
-        <CommandInput
-          id="product-search-input"
-          placeholder="Digite para buscar..."
-          value={query}
-          onValueChange={setQuery}
-          onBlur={() => setTimeout(() => setIsOpen(false), 150)}
-          onFocus={() => query && results.length > 0 && setIsOpen(true)}
-        />
-        {isOpen && (
-          <div className="absolute top-full z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md mt-1">
+    <div className="space-y-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Digite o nome ou EAN do produto..."
+              className="pl-9"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+          <Command shouldFilter={false}>
             <CommandList>
-              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+              <CommandEmpty>
+                {isLoading ? "Buscando..." : "Nenhum produto encontrado"}
+              </CommandEmpty>
               <CommandGroup>
-                {results.map((product) => (
+                {produtos.map((produto) => (
                   <CommandItem
-                    key={product._id}
-                    onSelect={() => handleSelect(product)}
-                    value={product.nome}
+                    key={produto._id.toString()}
+                    value={produto._id.toString()}
+                    onSelect={() => handleSelecionarProduto(produto)}
+                    className="flex flex-col items-start py-3"
                   >
-                    {product.nome}
+                    <div className="flex justify-between w-full">
+                      <span className="font-medium">{produto.nome}</span>
+                      <Badge variant="outline" className="ml-2">
+                        Estoque: {produto.saldo}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {produto.tipo}
+                      </Badge>
+                      {produto.codigoEAN && (
+                        <Badge variant="outline" className="text-xs font-mono">
+                          EAN: {produto.codigoEAN}
+                        </Badge>
+                      )}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
             </CommandList>
-          </div>
-        )}
-      </Command>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      
+      {/^\d+$/.test(query) && query.length > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Barcode className="h-3 w-3" />
+          <span>Buscando por código EAN...</span>
+        </div>
+      )}
     </div>
   );
 }
