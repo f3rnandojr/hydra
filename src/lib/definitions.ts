@@ -85,3 +85,14 @@ export type Cafeteria = {
   dataCriacao: Date;
   dataAtualizacao: Date;
 };
+
+export type Usuario = {
+  _id: string;
+  nome: string;
+  email: string;
+  senha?: string; // Não retornar em consultas públicas
+  tipo: "gestor" | "usuario";
+  status: "ativo" | "inativo";
+  dataCriacao: Date;
+  dataAtualizacao: Date;
+};
