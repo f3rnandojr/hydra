@@ -107,10 +107,23 @@ export async function getProducts(): Promise<Product[]> {
     })) as unknown as Product[];
 }
 
-export async function createProduct(data: Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>): Promise<Product> {
+export async function createProduct(data: Partial<Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>>): Promise<Product> {
     const db = await getDb();
+
+    if (data.codigoEAN) {
+        const existingProduct = await db.collection("produtos").findOne({
+            codigoEAN: data.codigoEAN,
+            ativo: true
+        });
+        if (existingProduct) {
+            throw new Error("Já existe um produto com este código EAN");
+        }
+    }
+
     const newProduct = {
-        ...data,
+        nome: data.nome!,
+        tipo: data.tipo!,
+        codigoEAN: data.codigoEAN || null,
         estoqueMinimo: data.estoqueMinimo || null,
         saldo: 0,
         ativo: true,
@@ -129,6 +142,18 @@ export async function updateProduct(id: string, data: Partial<Omit<Product, '_id
         return null;
     }
     const db = await getDb();
+
+    if (data.codigoEAN) {
+        const existingProduct = await db.collection("produtos").findOne({
+            codigoEAN: data.codigoEAN,
+            ativo: true,
+            _id: { $ne: new ObjectId(id) }
+        });
+        if (existingProduct) {
+            throw new Error("Já existe um outro produto com este código EAN");
+        }
+    }
+
     const result = await db.collection('produtos').findOneAndUpdate(
         { _id: new ObjectId(id) },
         { $set: { ...data, dataAtualizacao: new Date() } },

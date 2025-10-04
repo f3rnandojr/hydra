@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,10 +26,17 @@ import {
 
 import type { Product } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
+import { validarEAN13 } from "@/lib/validators";
 
 const productSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres."),
   tipo: z.enum(["alimento", "bebida"]),
+  codigoEAN: z.string()
+    .optional()
+    .nullable()
+    .refine((ean) => !ean || validarEAN13(ean), {
+      message: "Código EAN-13 inválido"
+    }),
   estoqueMinimo: z.coerce.number().optional().nullable(),
 });
 
@@ -50,6 +57,7 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
     defaultValues: {
       nome: product?.nome || "",
       tipo: product?.tipo || "alimento",
+      codigoEAN: product?.codigoEAN || "",
       estoqueMinimo: product?.estoqueMinimo || null,
     },
   });
@@ -57,11 +65,16 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
   const onSubmit = async (data: ProductFormData) => {
     setIsSubmitting(true);
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formData.append(key, String(value));
-      }
-    });
+    // Manually build formData to handle null/optional values correctly
+    formData.append('nome', data.nome);
+    formData.append('tipo', data.tipo);
+    if (data.codigoEAN) {
+      formData.append('codigoEAN', data.codigoEAN);
+    }
+    if (data.estoqueMinimo !== null && data.estoqueMinimo !== undefined) {
+      formData.append('estoqueMinimo', String(data.estoqueMinimo));
+    }
+
 
     try {
       const result = await action(null, formData);
@@ -72,7 +85,7 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
           description: result.message,
         });
         onSuccess();
-      } else if (result.message && result.errors) {
+      } else if (result.message) {
         toast({
           title: "Erro",
           description: result.message,
@@ -103,6 +116,26 @@ export function ProductForm({ product, action, onSuccess }: ProductFormProps) {
               <FormControl>
                 <Input placeholder="Nome do produto" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="codigoEAN"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Código EAN</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Ex: 7891234567890" 
+                  {...field}
+                  value={field.value || ''}
+                />
+              </FormControl>
+              <FormDescription>
+                Código de barras EAN-13 (opcional)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

@@ -8,10 +8,17 @@ import {
   deleteProduct as dbDeleteProduct,
 } from "@/lib/data";
 import { Product } from "@/lib/definitions";
+import { validarEAN13 } from "@/lib/validators";
 
 const productSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres."),
   tipo: z.enum(["alimento", "bebida"]),
+  codigoEAN: z.string()
+    .optional()
+    .nullable()
+    .refine((ean) => !ean || validarEAN13(ean), {
+      message: "Código EAN-13 inválido"
+    }),
   estoqueMinimo: z.coerce.number().optional().nullable(),
 });
 
@@ -31,8 +38,8 @@ export async function createProduct(prevState: any, formData: FormData) {
     await dbCreateProduct(validatedFields.data);
     revalidatePath("/produtos");
     return { message: "Produto criado com sucesso." };
-  } catch (e) {
-    return { message: "Falha ao criar produto." };
+  } catch (e: any) {
+    return { message: e.message || "Falha ao criar produto." };
   }
 }
 
@@ -52,8 +59,8 @@ export async function updateProduct(id: string, prevState: any, formData: FormDa
         await dbUpdateProduct(id, validatedFields.data);
         revalidatePath("/produtos");
         return { message: "Produto atualizado com sucesso." };
-    } catch (e) {
-        return { message: "Falha ao atualizar produto." };
+    } catch (e: any) {
+        return { message: e.message || "Falha ao atualizar produto." };
     }
 }
 
