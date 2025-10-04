@@ -64,10 +64,7 @@ export type Venda = {
   total: number;
   status: "finalizada" | "cancelada";
   usuarioId: string | ObjectId;
-  usuario?: { // Vendedor
-    _id: string;
-    nome: string;
-  };
+  usuario?: Usuario;
   dataCriacao: Date;
 };
 
@@ -114,8 +111,5 @@ export type ContaReceber = {
   dataQuitacao?: Date;
   formaQuitacao?: string;
   usuarioQuitacaoId?: string | ObjectId;
-  usuarioQuitacao?: { // Quem quitou
-     _id: string;
-     nome: string;
-  }
+  usuarioQuitacao?: Usuario;
 };

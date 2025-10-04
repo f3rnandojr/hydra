@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
-import type { ContaReceber as ContaReceberType, Collaborator } from "@/lib/definitions";
+import type { ContaReceber as ContaReceberType, Collaborator, Usuario } from "@/lib/definitions";
 
 
 interface ContaReceber extends ContaReceberType {
@@ -32,6 +32,7 @@ interface ContaReceber extends ContaReceberType {
   usuarioQuitacao?: {
     _id: string;
     nome: string;
+    email: string;
   }
 }
 

@@ -64,9 +64,11 @@ export async function GET(request: NextRequest) {
       _id: conta._id.toString(),
       vendaId: conta.vendaId?.toString(),
       colaboradorId: conta.colaboradorId?.toString(),
+      usuarioQuitacaoId: conta.usuarioQuitacaoId?.toString(),
       colaborador: conta.colaborador ? {
         ...conta.colaborador,
-        _id: conta.colaborador._id.toString()
+        _id: conta.colaborador._id.toString(),
+        senha: "" // Remover senha
       } : null,
       venda: conta.venda ? {
         ...conta.venda,
@@ -74,7 +76,8 @@ export async function GET(request: NextRequest) {
       } : null,
       usuarioQuitacao: conta.usuarioQuitacao ? {
         _id: conta.usuarioQuitacao._id.toString(),
-        nome: conta.usuarioQuitacao.nome
+        nome: conta.usuarioQuitacao.nome,
+        email: conta.usuarioQuitacao.email
       } : null
     })));
   } catch (error) {
@@ -90,7 +93,11 @@ export async function POST(request: NextRequest) {
   try {
     const { contaId, status, formaQuitacao } = await request.json();
     const authHeader = request.headers.get('authorization');
-    const usuarioId = authHeader?.split(' ')[1] || "669ff07e8c3395d96a513f18"; // Temporário
+    const usuarioId = authHeader?.split(' ')[1];
+
+    if (!usuarioId) {
+        return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 });
+    }
 
     if (!contaId || !status) {
       return NextResponse.json(

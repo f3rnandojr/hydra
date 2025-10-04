@@ -20,34 +20,21 @@ import {
   Store,
   Receipt
 } from "lucide-react";
+import type { Venda as VendaType } from "@/lib/definitions";
 
-interface Venda {
-  _id: string;
-  numeroVenda: string;
-  dataVenda: string;
-  cafeteria: string;
-  tipoCliente: "normal" | "colaborador";
-  colaboradorId?: string;
-  colaborador?: {
-    _id: string;
-    nome: string;
-    email: string;
-  };
-  usuario?: { // Vendedor
-    _id: string;
-    nome: string;
-  };
-  formaPagamento: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar";
-  itens: Array<{
-    produtoId: string;
-    nomeProduto: string;
-    quantidade: number;
-    precoUnitario: number;
-    subtotal: number;
-  }>;
-  total: number;
-  status: string;
+
+interface Venda extends VendaType {
+    usuario?: {
+        _id: string;
+        nome: string;
+    };
+    colaborador?: {
+        _id: string;
+        nome: string;
+        email: string;
+    };
 }
+
 
 interface Filtros {
   periodo: "hoje" | "semana" | "mes" | "ano" | "personalizado";
