@@ -7,8 +7,8 @@ import { ObjectId } from "mongodb";
 
 const itemSchema = z.object({
   produtoId: z.string().min(1, "Produto é obrigatório"),
-  quantidade: z.number().min(0.01, "Quantidade deve ser maior que zero"),
-  precoCusto: z.number().min(0.01, "Preço de custo deve ser maior que zero"),
+  quantidade: z.coerce.number().min(0.01, "Quantidade deve ser maior que zero"),
+  precoCusto: z.coerce.number().min(0.01, "Preço de custo deve ser maior que zero"),
 });
 
 const baseSchema = z.object({
@@ -25,7 +25,7 @@ const notaFiscalSchema = baseSchema.extend({
 const ajusteSchema = baseSchema.extend({
   tipo: z.literal("ajuste"),
   produtoId: z.string().min(1, "Produto é obrigatório"),
-  novoSaldo: z.number().min(0, "Saldo não pode ser negativo")
+  novoSaldo: z.coerce.number().min(0, "Saldo não pode ser negativo")
 });
 
 const entradaSchema = z.discriminatedUnion("tipo", [
@@ -68,7 +68,8 @@ export async function createEntrada(prevState: any, formData: FormData) {
       if (data.tipo === "nota_fiscal") {
         const itensComSaldos = await Promise.all(
           data.itens.map(async (item) => {
-            const estoqueAtual = await db.collection("estoque").findOne(
+            // 👇 CORREÇÃO: Buscar OU criar registro de estoque
+            let estoqueAtual: any = await db.collection("estoque").findOne(
               { 
                 produtoId: new ObjectId(item.produtoId),
                 cafeteria: data.cafeteria 
@@ -76,13 +77,43 @@ export async function createEntrada(prevState: any, formData: FormData) {
               { session }
             );
             
+            // Se não existe registro, criar com saldo zero
             if (!estoqueAtual) {
-              throw new Error(`Produto ${item.produtoId} não encontrado na cafeteria ${data.cafeteria}`);
+              const produto = await db.collection("produtos").findOne(
+                { _id: new ObjectId(item.produtoId) },
+                { session }
+              );
+              
+              if (!produto) {
+                throw new Error(`Produto ${item.produtoId} não encontrado`);
+              }
+              
+              // Criar registro inicial de estoque
+              const resultado = await db.collection("estoque").insertOne(
+                {
+                  produtoId: new ObjectId(item.produtoId),
+                  cafeteria: data.cafeteria,
+                  saldo: 0,
+                  estoqueMinimo: produto.estoqueMinimo || 0,
+                  dataCriacao: new Date(),
+                  dataAtualizacao: new Date()
+                },
+                { session }
+              );
+              
+              estoqueAtual = {
+                _id: resultado.insertedId,
+                produtoId: new ObjectId(item.produtoId),
+                cafeteria: data.cafeteria,
+                saldo: 0,
+                estoqueMinimo: produto.estoqueMinimo || 0
+              };
             }
             
             const saldoAnterior = estoqueAtual.saldo;
             const saldoAtual = saldoAnterior + item.quantidade;
             
+            // Atualizar estoque da cafeteria específica
             await db.collection("estoque").updateOne(
               { 
                 produtoId: new ObjectId(item.produtoId),
@@ -109,13 +140,14 @@ export async function createEntrada(prevState: any, formData: FormData) {
           cafeteria: data.cafeteria,
           itens: itensComSaldos,
           dataEntrada: new Date(),
-          usuarioId: new ObjectId("669ff07e8c3395d96a513f18") // TODO: Substituir por ID de usuário autenticado
+          usuarioId: new ObjectId("669ff07e8c3395d96a513f18")
         }, { session });
-
+      
         message = "Entrada de nota fiscal registrada com sucesso!";
         
       } else { // data.tipo === "ajuste"
-        const estoqueAtual = await db.collection("estoque").findOne(
+        // 👇 CORREÇÃO: Buscar OU criar registro de estoque
+        let estoqueAtual: any = await db.collection("estoque").findOne(
           { 
             produtoId: new ObjectId(data.produtoId),
             cafeteria: data.cafeteria 
@@ -123,13 +155,43 @@ export async function createEntrada(prevState: any, formData: FormData) {
           { session }
         );
         
+        // Se não existe registro, criar com saldo zero
         if (!estoqueAtual) {
-          throw new Error("Produto não encontrado na cafeteria selecionada");
+          const produto = await db.collection("produtos").findOne(
+            { _id: new ObjectId(data.produtoId) },
+            { session }
+          );
+          
+          if (!produto) {
+            throw new Error("Produto não encontrado");
+          }
+          
+          // Criar registro inicial de estoque
+          const resultado = await db.collection("estoque").insertOne(
+            {
+              produtoId: new ObjectId(data.produtoId),
+              cafeteria: data.cafeteria,
+              saldo: 0,
+              estoqueMinimo: produto.estoqueMinimo || 0,
+              dataCriacao: new Date(),
+              dataAtualizacao: new Date()
+            },
+            { session }
+          );
+          
+          estoqueAtual = {
+            _id: resultado.insertedId,
+            produtoId: new ObjectId(data.produtoId),
+            cafeteria: data.cafeteria,
+            saldo: 0,
+            estoqueMinimo: produto.estoqueMinimo || 0
+          };
         }
         
         const saldoAnterior = estoqueAtual.saldo;
         const saldoAtual = data.novoSaldo;
         
+        // Atualizar estoque da cafeteria específica
         await db.collection("estoque").updateOne(
           { 
             produtoId: new ObjectId(data.produtoId),
@@ -144,16 +206,16 @@ export async function createEntrada(prevState: any, formData: FormData) {
           cafeteria: data.cafeteria,
           itens: [{
             produtoId: new ObjectId(data.produtoId),
-            quantidade: saldoAtual - saldoAnterior, // diferença
+            quantidade: saldoAtual - saldoAnterior,
             saldoAnterior,
             saldoAtual,
             cafeteria: data.cafeteria
           }],
           observacao: "Ajuste de estoque",
           dataEntrada: new Date(),
-          usuarioId: new ObjectId("669ff07e8c3395d96a513f18") // TODO: Substituir por ID de usuário autenticado
+          usuarioId: new ObjectId("669ff07e8c3395d96a513f18")
         }, { session });
-
+      
         message = "Ajuste de estoque registrado com sucesso!";
       }
     });
