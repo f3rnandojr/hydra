@@ -1,3 +1,4 @@
+
 // src/app/api/relatorios/vendas-v2/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
@@ -7,21 +8,63 @@ export async function GET(request: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db("hydra");
+    const { searchParams } = new URL(request.url);
 
-    console.log('=== FASE 1: INICIANDO API VENDAS-V2 ===');
+    // Obter parâmetros de filtro
+    const periodo = searchParams.get('periodo') || 'todos';
+    const formaPagamento = searchParams.get('formaPagamento');
+    const tipoCliente = searchParams.get('tipoCliente');
+    const cafeteria = searchParams.get('cafeteria');
 
+    // Construir filtro baseado nos parâmetros
+    const filtro: any = {};
+
+    // Filtro de período
+    if (periodo && periodo !== 'todos') {
+      const hoje = new Date();
+      switch (periodo) {
+        case 'hoje':
+          filtro.dataVenda = {
+            $gte: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()),
+            $lt: new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1)
+          };
+          break;
+        case 'semana':
+          const inicioSemana = new Date(hoje);
+          inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+          filtro.dataVenda = { $gte: inicioSemana };
+          break;
+        case 'mes':
+          filtro.dataVenda = {
+            $gte: new Date(hoje.getFullYear(), hoje.getMonth(), 1),
+            $lt: new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1)
+          };
+          break;
+      }
+    }
+
+    // Outros filtros
+    if (formaPagamento && formaPagamento !== 'todos') {
+      filtro.formaPagamento = formaPagamento;
+    }
+
+    if (tipoCliente && tipoCliente !== 'todos') {
+      filtro.tipoCliente = tipoCliente;
+    }
+
+    if (cafeteria && cafeteria !== 'todos') {
+      filtro.cafeteria = cafeteria;
+    }
+
+    console.log('=== FILTROS APLICADOS ===', filtro);
+    
     // Pipeline SIMPLES e TESTADO
-    const aggregatePipeline = [
+    const aggregatePipeline: any[] = [
       {
-        $match: {
-          // Filtro básico inicial - últimas 10 vendas para teste
-        }
+        $match: filtro // ← Usar o filtro construído
       },
       {
         $sort: { dataVenda: -1 }
-      },
-      {
-        $limit: 10
       },
       {
         $lookup: {
@@ -54,24 +97,9 @@ export async function GET(request: NextRequest) {
       }
     ];
 
-    console.log('=== EXECUTANDO PIPELINE ===');
     const vendas = await db.collection("vendas")
       .aggregate(aggregatePipeline)
       .toArray();
-
-    // DEBUG CRÍTICO
-    console.log('=== DEBUG FASE 1 ===');
-    console.log('Total de vendas encontradas:', vendas.length);
-    if (vendas.length > 0) {
-      const primeiraVenda = vendas[0];
-      console.log('Primeira venda - Estrutura:', {
-        numeroVenda: primeiraVenda.numeroVenda,
-        usuarioId: primeiraVenda.usuarioId,
-        usuario: primeiraVenda.usuario, // ← DEVE SER OBJETO, NÃO ARRAY
-        colaboradorId: primeiraVenda.colaboradorId,
-        colaborador: primeiraVenda.colaborador // ← DEVE SER OBJETO, NÃO ARRAY
-      });
-    }
 
     // Converter ObjectIds para strings
     const vendasFormatadas = vendas.map(venda => ({
@@ -89,7 +117,6 @@ export async function GET(request: NextRequest) {
       } : null
     }));
 
-    console.log('=== FASE 1 CONCLUÍDA - ENVIANDO DADOS ===');
     return NextResponse.json(vendasFormatadas);
 
   } catch (error) {
