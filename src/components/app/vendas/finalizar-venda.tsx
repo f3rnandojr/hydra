@@ -111,11 +111,11 @@ export function FinalizarVenda({
       const vendaData = {
         cafeteria: cafeteriaAtiva,
         tipoCliente,
-        colaboradorId: tipoCliente === "colaborador" ? colaboradorId : undefined,
+        colaboradorId: tipoCliente === "colaborador" && colaboradorId ? colaboradorId : undefined,
         itens: itens.map(item => ({
           produtoId: item.produto._id.toString(),
           nomeProduto: item.produto.nome,
-          codigoEAN: item.produto.codigoEAN,
+          codigoEAN: item.produto.codigoEAN || "",
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario,
           subtotal: item.quantidade * item.precoUnitario
