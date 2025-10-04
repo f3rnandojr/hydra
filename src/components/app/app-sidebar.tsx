@@ -1,7 +1,16 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Users, Waves, Package, ShoppingCart, Settings, Coffee, LineChart, Warehouse } from "lucide-react";
+import {
+  Users,
+  Waves,
+  Package,
+  ShoppingCart,
+  Settings,
+  Coffee,
+  LineChart,
+  Warehouse,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -21,8 +30,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
-            <Waves className="text-primary group-data-[collapsible=icon]:hidden" />
-            <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">Hydra</h1>
+          <Waves className="text-primary group-data-[collapsible=icon]:hidden" />
+          <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
+            Hydra
+          </h1>
         </div>
         <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
       </SidebarHeader>
@@ -35,10 +46,8 @@ export function AppSidebar() {
               tooltip="Colaboradores"
             >
               <Link href="/colaboradores">
-                <div className="flex items-center gap-2">
-                  <Users />
-                  <span>Colaboradores</span>
-                </div>
+                <Users />
+                <span>Colaboradores</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -49,10 +58,8 @@ export function AppSidebar() {
               tooltip="Produtos"
             >
               <Link href="/produtos">
-                <div className="flex items-center gap-2">
-                  <Package />
-                  <span>Produtos</span>
-                </div>
+                <Package />
+                <span>Produtos</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -63,24 +70,20 @@ export function AppSidebar() {
               tooltip="Vendas"
             >
               <Link href="/vendas">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart />
-                  <span>Vendas</span>
-                </div>
+                <ShoppingCart />
+                <span>Vendas</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-           <SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={pathname === "/relatorios/vendas"}
               tooltip="Relatório de Vendas"
             >
               <Link href="/relatorios/vendas">
-                <div className="flex items-center gap-2">
-                    <LineChart />
-                    <span>Relatório de Vendas</span>
-                </div>
+                <LineChart />
+                <span>Relatório de Vendas</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -91,10 +94,8 @@ export function AppSidebar() {
               tooltip="Posição de Estoque"
             >
               <Link href="/relatorios/estoque">
-                <div className="flex items-center gap-2">
-                    <Warehouse />
-                    <span>Posição de Estoque</span>
-                </div>
+                <Warehouse />
+                <span>Posição de Estoque</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -105,24 +106,20 @@ export function AppSidebar() {
               tooltip="Cafeterias"
             >
               <Link href="/cafeterias">
-                <div className="flex items-center gap-2">
-                  <Coffee />
-                  <span>Cafeterias</span>
-                </div>
+                <Coffee />
+                <span>Cafeterias</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-           <SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith("/admin")}
               tooltip="Parâmetros"
             >
               <Link href="/admin">
-                <div className="flex items-center gap-2">
-                  <Settings />
-                  <span>Parâmetros</span>
-                </div>
+                <Settings />
+                <span>Parâmetros</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
