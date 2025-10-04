@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     const db = client.db("hydra");
 
     const filtro: any = {};
-    if (status) filtro.status = status;
-    if (colaboradorId) filtro.colaboradorId = new ObjectId(colaboradorId);
+    if (status && status !== 'todos') filtro.status = status;
+    if (colaboradorId && colaboradorId !== 'todos') filtro.colaboradorId = new ObjectId(colaboradorId);
 
     const contas = await db.collection("contas_receber")
       .aggregate([
@@ -72,47 +72,50 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = (await clientPromise).startSession();
   try {
-    const body = await request.json();
-    const { contaIds, formaPagamento } = body;
+    const { contaId, status, formaQuitacao } = await request.json();
 
-    if (!Array.isArray(contaIds) || contaIds.length === 0) {
-      return NextResponse.json({ message: "Nenhuma conta selecionada para quitação." }, { status: 400 });
-    }
-    if (!formaPagamento) {
-      return NextResponse.json({ message: "Forma de pagamento da quitação é obrigatória." }, { status: 400 });
-    }
-
-    let result;
-    await session.withTransaction(async () => {
-      const db = (await clientPromise).db("hydra");
-      const objectIds = contaIds.map(id => new ObjectId(id));
-
-      result = await db.collection("contas_receber").updateMany(
-        { _id: { $in: objectIds }, status: "em_debito" },
-        {
-          $set: {
-            status: "quitado",
-            dataQuitacao: new Date(),
-            formaQuitacao: formaPagamento,
-            dataAtualizacao: new Date()
-          }
-        },
-        { session }
+    if (!contaId || !status) {
+      return NextResponse.json(
+        { error: "ContaId e status são obrigatórios" },
+        { status: 400 }
       );
-    });
-
-    if (result && result.modifiedCount > 0) {
-      return NextResponse.json({ message: `${result.modifiedCount} conta(s) quitada(s) com sucesso.` });
-    } else {
-      return NextResponse.json({ message: "Nenhuma conta em débito foi encontrada para quitação." }, { status: 404 });
     }
 
+    const client = await clientPromise;
+    const db = client.db("hydra");
+
+    const updateData: any = {
+      status: status,
+      dataAtualizacao: new Date()
+    };
+
+    if (status === "quitado") {
+      updateData.dataQuitacao = new Date();
+      updateData.formaQuitacao = formaQuitacao || "dinheiro";
+    }
+
+    const resultado = await db.collection("contas_receber").updateOne(
+      { _id: new ObjectId(contaId) },
+      { $set: updateData }
+    );
+
+    if (resultado.modifiedCount === 0) {
+      return NextResponse.json(
+        { error: "Conta não encontrada" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Conta atualizada com sucesso" 
+    });
   } catch (error) {
-    console.error("Erro ao quitar contas:", error);
-    return NextResponse.json({ message: "Falha ao quitar contas." }, { status: 500 });
-  } finally {
-    await session.endSession();
+    console.error("Erro ao atualizar conta:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
   }
 }

@@ -10,6 +10,7 @@ import {
   Coffee,
   LineChart,
   Warehouse,
+  Receipt,
 } from "lucide-react";
 
 import {
@@ -69,6 +70,17 @@ export function AppSidebar() {
               >
                 <ShoppingCart />
                 <span>Vendas</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <Link href="/contas-receber">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/contas-receber")}
+                tooltip="Contas a Receber"
+              >
+                <Receipt />
+                <span>Contas a Receber</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
