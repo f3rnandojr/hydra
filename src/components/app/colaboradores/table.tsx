@@ -33,7 +33,7 @@ export function CollaboratorsTable({
         </TableHeader>
         <TableBody>
           {collaborators.map((c) => (
-            <TableRow key={c._id}>
+            <TableRow key={c._id.toString()}>
               <TableCell className="font-medium">{c.nome}</TableCell>
               <TableCell className="hidden md:table-cell">{c.email}</TableCell>
               <TableCell>
@@ -44,7 +44,7 @@ export function CollaboratorsTable({
               <TableCell className="text-right">
                 <div className="flex justify-end items-center gap-2">
                   <EditCollaboratorButton collaborator={c} />
-                  <DeleteCollaboratorButton id={c._id} />
+                  <DeleteCollaboratorButton id={c._id.toString()} />
                 </div>
               </TableCell>
             </TableRow>

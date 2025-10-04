@@ -62,7 +62,7 @@ export function EditCollaboratorButton({
   collaborator: Collaborator;
 }) {
   const [open, setOpen] = useState(false);
-  const updateCollaboratorWithId = updateCollaborator.bind(null, collaborator._id);
+  const updateCollaboratorWithId = updateCollaborator.bind(null, collaborator._id.toString());
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

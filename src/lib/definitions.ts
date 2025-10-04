@@ -1,5 +1,7 @@
+import type { ObjectId } from 'mongodb';
+
 export type Collaborator = {
-  _id: string;
+  _id: string | ObjectId;
   nome: string;
   email: string;
   senha?: string;
