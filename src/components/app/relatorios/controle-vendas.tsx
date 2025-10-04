@@ -24,7 +24,10 @@ import type { Venda as VendaType, Usuario } from "@/lib/definitions";
 
 
 interface Venda extends VendaType {
-    usuario?: Usuario; // Alterado para ser um objeto único
+    usuario?: { // Alterado para ser um objeto único e opcional
+        _id: string;
+        nome: string;
+    };
     colaborador?: {
         _id: string;
         nome: string;
@@ -77,18 +80,6 @@ export function ControleVendas() {
       const response = await fetch(`/api/relatorios/vendas?${params}`);
       if (response.ok) {
         const data = await response.json();
-        
-        // DEBUG ADICIONADO
-        console.log('=== DEBUG FRONTEND ===');
-        console.log('Dados brutos da API:', data);
-        if (data.length > 0) {
-          console.log('Primeira venda no frontend:', {
-            _id: data[0]._id,
-            usuario: data[0].usuario, // ← O QUE CHEGOU AQUI?
-            colaborador: data[0].colaborador // ← O QUE CHEGOU AQUI?
-          });
-        }
-        
         setVendas(data);
       } else {
         throw new Error('Erro ao buscar vendas');
@@ -353,16 +344,7 @@ export function ControleVendas() {
             </div>
           ) : (
             <div className="space-y-4">
-              {vendas.map((venda) => {
-                 console.log('=== VENDA INDIVIDUAL ===', {
-                  numeroVenda: venda.numeroVenda,
-                  usuario: venda.usuario, // ← VERIFIQUE SE TEM DADOS AQUI
-                  usuarioNome: venda.usuario?.nome, // ← VERIFIQUE SE TEM NOME
-                  colaborador: venda.colaborador, // ← VERIFIQUE SE TEM DADOS AQUI
-                  colaboradorNome: venda.colaborador?.nome // ← VERIFIQUE SE TEM NOME
-                });
-
-                return (
+              {vendas.map((venda) => (
                   <Card key={venda._id} className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
@@ -410,8 +392,7 @@ export function ControleVendas() {
                       ))}
                     </div>
                   </Card>
-                )
-              })}
+                ))}
             </div>
           )}
         </CardContent>
