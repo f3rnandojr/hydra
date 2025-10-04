@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Save, RefreshCw } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 interface Parametro {
   _id: string;
@@ -18,12 +19,12 @@ interface Parametro {
 
 export function ParametrosAdmin() {
   const { toast } = useToast();
+  const { usuario } = useAuth();
   const [parametros, setParametros] = useState<Parametro[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [valoresEditados, setValoresEditados] = useState<Record<string, string>>({});
 
-  // Buscar parâmetros ao carregar o componente
   useEffect(() => {
     carregarParametros();
   }, []);
@@ -31,12 +32,11 @@ export function ParametrosAdmin() {
   const carregarParametros = async () => {
     try {
       setCarregando(true);
-      const response = await fetch('/api/parametros'); // Rota corrigida
+      const response = await fetch('/api/parametros');
       if (response.ok) {
         const data = await response.json();
         setParametros(data);
         
-        // Inicializar valores editados
         const iniciais: Record<string, string> = {};
         data.forEach((param: Parametro) => {
           iniciais[param.chave] = param.valor;
@@ -65,10 +65,18 @@ export function ParametrosAdmin() {
   };
 
   const salvarParametros = async () => {
+    if (usuario?.tipo !== 'gestor') {
+      toast({
+        title: "Acesso Negado",
+        description: "Você não tem permissão para salvar parâmetros.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSalvando(true);
     try {
       for (const [chave, valor] of Object.entries(valoresEditados)) {
-        // Only save if the value has changed
         const originalParam = parametros.find(p => p.chave === chave);
         if (originalParam && originalParam.valor !== valor) {
             const response = await fetch('/api/parametros', {
@@ -90,7 +98,6 @@ export function ParametrosAdmin() {
         description: "Parâmetros atualizados com sucesso.",
       });
       
-      // Recarregar para pegar datas de atualização
       await carregarParametros();
       
     } catch (error) {
@@ -104,6 +111,16 @@ export function ParametrosAdmin() {
       setSalvando(false);
     }
   };
+  
+  if (usuario?.tipo !== 'gestor') {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center py-10">
+            <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
+            <p className="text-muted-foreground">Esta área é restrita para gestores.</p>
+        </div>
+    );
+  }
+
 
   if (carregando) {
     return (

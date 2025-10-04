@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateProductButton } from "@/components/app/produtos/buttons";
 import { CreateEntradaButton } from "@/components/app/entradas/buttons";
 import { ProductsTable } from "@/components/app/produtos/table";
+import { getUsuarios } from "@/lib/data";
+
 
 export default async function ProdutosPage() {
   const products = await getProducts();

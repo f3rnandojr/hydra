@@ -1,6 +1,6 @@
 import clientPromise from './mongodb';
 import { ObjectId, type WithId } from 'mongodb';
-import type { Collaborator, Product, Cafeteria } from './definitions';
+import type { Collaborator, Product, Cafeteria, Usuario } from './definitions';
 import bcrypt from 'bcrypt';
 
 async function getDb() {
@@ -203,4 +203,68 @@ export async function createCafeteria(data: Omit<Cafeteria, '_id' | 'dataCriacao
         ...newCafeteria,
         _id: result.insertedId.toString(),
     } as Cafeteria;
+}
+
+
+// Usuarios Functions
+export async function getUsuarios(): Promise<Usuario[]> {
+  const db = await getDb();
+  const usuarios = await db.collection('usuarios').find().sort({ nome: 1 }).project({senha: 0}).toArray();
+  return usuarios.map(u => ({
+    ...u,
+    _id: u._id.toString(),
+  })) as unknown as Usuario[];
+}
+
+export async function createUsuario(data: Omit<Usuario, '_id' | 'dataCriacao' | 'dataAtualizacao'>): Promise<Usuario> {
+    const db = await getDb();
+    
+    const newUsuario = {
+      ...data,
+      dataCriacao: new Date(),
+      dataAtualizacao: new Date(),
+    };
+
+    const result = await db.collection('usuarios').insertOne(newUsuario);
+    
+    return {
+        ...newUsuario,
+        _id: result.insertedId.toString(),
+    } as Usuario;
+}
+
+export async function updateUsuario(id: string, data: Partial<Omit<Usuario, '_id'>>): Promise<Usuario | null> {
+    if (!ObjectId.isValid(id)) {
+        return null;
+    }
+    const db = await getDb();
+    
+    const dataToUpdate: any = { ...data };
+    
+    const result = await db.collection('usuarios').findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: { ...dataToUpdate, dataAtualizacao: new Date() } },
+        { returnDocument: 'after', projection: { senha: 0 } }
+    );
+
+    if (result) {
+        return {
+            ...result,
+            _id: result._id.toString(),
+        } as unknown as Usuario;
+    }
+
+    return null;
+}
+
+export async function deleteUsuario(id: string): Promise<boolean> {
+    if (!ObjectId.isValid(id)) {
+        return false;
+    }
+    const db = await getDb();
+    const result = await db.collection('usuarios').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { status: 'inativo', dataAtualizacao: new Date() } }
+    );
+    return result.modifiedCount === 1;
 }

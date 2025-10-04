@@ -11,7 +11,9 @@ import {
   LineChart,
   Warehouse,
   Receipt,
+  Users2,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 import {
   Sidebar,
@@ -26,6 +28,7 @@ import Link from "next/link";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { usuario } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -117,17 +120,32 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <Link href="/admin">
-              <SidebarMenuButton
-                isActive={pathname.startsWith("/admin")}
-                tooltip="Parâmetros"
-              >
-                <Settings />
-                <span>Parâmetros</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
+          {usuario?.tipo === 'gestor' && (
+            <>
+              <SidebarMenuItem>
+                <Link href="/usuarios">
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith("/usuarios")}
+                    tooltip="Usuários"
+                  >
+                    <Users2 />
+                    <span>Usuários</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <Link href="/admin">
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith("/admin")}
+                    tooltip="Parâmetros"
+                  >
+                    <Settings />
+                    <span>Parâmetros</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            </>
+          )}
         </SidebarMenu>
       </SidebarContent>
     </Sidebar>
