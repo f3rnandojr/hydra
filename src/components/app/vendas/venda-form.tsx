@@ -44,17 +44,6 @@ export function VendaForm() {
   });
 
   const handleProductSelect = (product: Product) => {
-    if (product.saldo <= 0) {
-        toast({
-            title: "Estoque Insuficiente",
-            description: `O produto "${product.nome}" não tem estoque disponível.`,
-            variant: "destructive"
-        });
-        return;
-    }
-    // TODO: Usar preço real do produto
-    const mockPrice = Math.floor(Math.random() * 20) + 5;
-
     const existingItemIndex = fields.findIndex(
       (item) => item.produtoId === product._id
     );
@@ -76,12 +65,12 @@ export function VendaForm() {
       });
     } else {
       append({
-        produtoId: product._id,
+        produtoId: product._id.toString(),
         nomeProduto: product.nome,
         codigoEAN: product.codigoEAN || undefined,
         quantidade: 1,
-        precoUnitario: mockPrice,
-        subtotal: mockPrice,
+        precoUnitario: product.precoVenda, // Usar o preço de venda do produto
+        subtotal: product.precoVenda,      // Subtotal inicial é o próprio preço
       });
     }
   };
