@@ -24,7 +24,7 @@ import type { Venda as VendaType, Usuario } from "@/lib/definitions";
 
 
 interface Venda extends VendaType {
-    usuario?: { // Alterado para ser um objeto único e opcional
+    usuario?: { 
         _id: string;
         nome: string;
     };
@@ -372,7 +372,7 @@ export function ControleVendas() {
                         <div className="flex items-center gap-2 text-sm">
                           <User className="h-4 w-4" />
                           <span className="font-medium">Colaborador:</span>
-                          <span>{venda.colaborador?.nome || 'Colaborador'}</span>
+                          <span>{venda.colaborador?.nome}</span>
                         </div>
                       </div>
                     )}
