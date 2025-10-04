@@ -18,6 +18,7 @@ const vendaSchema = z.object({
   cafeteria: z.string().min(1, "A cafeteria é obrigatória."),
   tipoCliente: z.enum(["normal", "colaborador"]),
   colaboradorId: z.string().optional(),
+  formaPagamento: z.enum(["dinheiro", "cartao_credito", "cartao_debito", "pix", "apagar"]),
   itens: z.array(itemVendaSchema).min(1, "A venda deve ter pelo menos um item."),
 });
 
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
         cafeteria: vendaData.cafeteria as any,
         tipoCliente: vendaData.tipoCliente,
         colaboradorId: vendaData.colaboradorId,
+        formaPagamento: vendaData.formaPagamento,
         itens: itens.map(it => ({...it, produtoId: it.produtoId})),
         total: totalVenda,
         status: "finalizada",

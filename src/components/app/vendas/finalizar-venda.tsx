@@ -49,6 +49,16 @@ export function FinalizarVenda({
   const [cafeteriaAtiva, setCafeteriaAtiva] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
+  
+  // Efeito para definir "apagar" automaticamente para colaborador
+  useEffect(() => {
+    if (tipoCliente === 'colaborador') {
+      setFormaPagamento('apagar');
+    } else {
+      setFormaPagamento('dinheiro'); // ou mantém o anterior
+    }
+  }, [tipoCliente]);
 
   // Buscar colaboradores e cafeteria ativa
   useEffect(() => {
@@ -112,10 +122,11 @@ export function FinalizarVenda({
         cafeteria: cafeteriaAtiva,
         tipoCliente,
         colaboradorId: tipoCliente === "colaborador" && colaboradorId ? colaboradorId : undefined,
+        formaPagamento, // 👈 NOVO CAMPO
         itens: itens.map(item => ({
           produtoId: item.produto._id.toString(),
           nomeProduto: item.produto.nome,
-          codigoEAN: item.produto.codigoEAN || "",
+          codigoEAN: item.produto.codigoEAN || "", // ✅ Garante que não seja undefined
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario,
           subtotal: item.quantidade * item.precoUnitario
@@ -229,6 +240,36 @@ export function FinalizarVenda({
               )}
             </div>
           )}
+
+          {/* Forma de Pagamento */}
+          <div className="space-y-3">
+            <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+            <Select 
+              value={formaPagamento} 
+              onValueChange={(value: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar") => 
+                setFormaPagamento(value)
+              }
+              disabled={tipoCliente === 'colaborador'} // 👈 Desabilita se for colaborador
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a forma de pagamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="apagar" disabled>
+                  {tipoCliente === 'colaborador' ? "À Pagar" : "Somente para colaboradores"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {tipoCliente === 'colaborador' && (
+              <p className="text-sm text-muted-foreground">
+                Pagamento automaticamente definido como "À Pagar" para colaboradores
+              </p>
+            )}
+          </div>
 
           {/* Resumo da Venda */}
           <div className="space-y-3">
