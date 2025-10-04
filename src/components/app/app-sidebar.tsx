@@ -40,88 +40,81 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith("/colaboradores")}
-              tooltip="Colaboradores"
-            >
-              <Link href="/colaboradores">
+            <Link href="/colaboradores">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/colaboradores")}
+                tooltip="Colaboradores"
+              >
                 <Users />
                 <span>Colaboradores</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith("/produtos")}
-              tooltip="Produtos"
-            >
-              <Link href="/produtos">
+            <Link href="/produtos">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/produtos")}
+                tooltip="Produtos"
+              >
                 <Package />
                 <span>Produtos</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith("/vendas")}
-              tooltip="Vendas"
-            >
-              <Link href="/vendas">
+            <Link href="/vendas">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/vendas")}
+                tooltip="Vendas"
+              >
                 <ShoppingCart />
                 <span>Vendas</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === "/relatorios/vendas"}
-              tooltip="Relatório de Vendas"
-            >
-              <Link href="/relatorios/vendas">
+            <Link href="/relatorios/vendas">
+              <SidebarMenuButton
+                isActive={pathname === "/relatorios/vendas"}
+                tooltip="Relatório de Vendas"
+              >
                 <LineChart />
                 <span>Relatório de Vendas</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === "/relatorios/estoque"}
-              tooltip="Posição de Estoque"
-            >
-              <Link href="/relatorios/estoque">
+            <Link href="/relatorios/estoque">
+              <SidebarMenuButton
+                isActive={pathname === "/relatorios/estoque"}
+                tooltip="Posição de Estoque"
+              >
                 <Warehouse />
                 <span>Posição de Estoque</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith("/cafeterias")}
-              tooltip="Cafeterias"
-            >
-              <Link href="/cafeterias">
+            <Link href="/cafeterias">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/cafeterias")}
+                tooltip="Cafeterias"
+              >
                 <Coffee />
                 <span>Cafeterias</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname.startsWith("/admin")}
-              tooltip="Parâmetros"
-            >
-              <Link href="/admin">
+            <Link href="/admin">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/admin")}
+                tooltip="Parâmetros"
+              >
                 <Settings />
                 <span>Parâmetros</span>
-              </Link>
-            </SidebarMenuButton>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
