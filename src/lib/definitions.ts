@@ -75,3 +75,12 @@ export type Caixa = {
   vendas: string[]; // Array de IDs de vendas
   status: "aberto" | "fechado";
 };
+
+export type Cafeteria = {
+  _id: string;
+  nome: string;
+  codigo: string;
+  status: boolean;
+  dataCriacao: Date;
+  dataAtualizacao: Date;
+};

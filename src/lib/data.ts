@@ -1,6 +1,6 @@
 import clientPromise from './mongodb';
 import { ObjectId, type WithId } from 'mongodb';
-import type { Collaborator, Product } from './definitions';
+import type { Collaborator, Product, Cafeteria } from './definitions';
 import bcrypt from 'bcrypt';
 
 async function getDb() {
@@ -176,4 +176,31 @@ export async function deleteProduct(id: string): Promise<boolean> {
         { $set: { ativo: false, dataAtualizacao: new Date() } }
     );
     return result.modifiedCount === 1;
+}
+
+// Cafeterias Functions
+export async function getCafeterias(): Promise<Cafeteria[]> {
+  const db = await getDb();
+  const cafeterias = await db.collection('cafeterias').find().sort({ nome: 1 }).toArray();
+  return cafeterias.map(c => ({
+    ...c,
+    _id: c._id.toString(),
+  })) as unknown as Cafeteria[];
+}
+
+export async function createCafeteria(data: Omit<Cafeteria, '_id' | 'dataCriacao' | 'dataAtualizacao'>): Promise<Cafeteria> {
+    const db = await getDb();
+    
+    const newCafeteria = {
+      ...data,
+      dataCriacao: new Date(),
+      dataAtualizacao: new Date(),
+    };
+
+    const result = await db.collection('cafeterias').insertOne(newCafeteria);
+    
+    return {
+        ...newCafeteria,
+        _id: result.insertedId.toString(),
+    } as Cafeteria;
 }
