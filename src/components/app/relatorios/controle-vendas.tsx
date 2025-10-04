@@ -20,15 +20,11 @@ import {
   Store,
   Receipt
 } from "lucide-react";
-import type { Venda as VendaType } from "@/lib/definitions";
+import type { Venda as VendaType, Usuario } from "@/lib/definitions";
 
 
 interface Venda extends VendaType {
-    usuario?: {
-        _id: string;
-        nome: string;
-        email: string;
-    };
+    usuario?: Usuario; // Alterado para ser um objeto único
     colaborador?: {
         _id: string;
         nome: string;
@@ -81,6 +77,18 @@ export function ControleVendas() {
       const response = await fetch(`/api/relatorios/vendas?${params}`);
       if (response.ok) {
         const data = await response.json();
+        
+        // DEBUG ADICIONADO
+        console.log('=== DEBUG FRONTEND ===');
+        console.log('Dados brutos da API:', data);
+        if (data.length > 0) {
+          console.log('Primeira venda no frontend:', {
+            _id: data[0]._id,
+            usuario: data[0].usuario, // ← O QUE CHEGOU AQUI?
+            colaborador: data[0].colaborador // ← O QUE CHEGOU AQUI?
+          });
+        }
+        
         setVendas(data);
       } else {
         throw new Error('Erro ao buscar vendas');
@@ -346,54 +354,62 @@ export function ControleVendas() {
           ) : (
             <div className="space-y-4">
               {vendas.map((venda) => {
+                 console.log('=== VENDA INDIVIDUAL ===', {
+                  numeroVenda: venda.numeroVenda,
+                  usuario: venda.usuario, // ← VERIFIQUE SE TEM DADOS AQUI
+                  usuarioNome: venda.usuario?.nome, // ← VERIFIQUE SE TEM NOME
+                  colaborador: venda.colaborador, // ← VERIFIQUE SE TEM DADOS AQUI
+                  colaboradorNome: venda.colaborador?.nome // ← VERIFIQUE SE TEM NOME
+                });
+
                 return (
-                <Card key={venda._id} className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold">#{venda.numeroVenda}</span>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          {getPaymentIcon(venda.formaPagamento)}
-                          {getPaymentLabel(venda.formaPagamento)}
-                        </Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(venda.dataVenda).toLocaleString('pt-BR')} • {venda.cafeteria}
-                      </div>
-                       <div className="text-sm text-muted-foreground mt-1">
-                        Vendedor: {venda.usuario?.nome || 'N/A'}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">R$ {venda.total.toFixed(2)}</div>
-                    </div>
-                  </div>
-
-                  {venda.tipoCliente === 'colaborador' && (
-                    <div className="bg-muted p-3 rounded-md mb-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4" />
-                        <span className="font-medium">Colaborador:</span>
-                        <span>{venda.colaborador?.nome || 'Colaborador'}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Itens da Venda */}
-                  <div className="space-y-2">
-                    {venda.itens.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center text-sm">
-                        <div>
-                          <span className="font-medium">{item.nomeProduto}</span>
-                          <span className="text-muted-foreground ml-2">
-                            {item.quantidade} × R$ {item.precoUnitario.toFixed(2)}
-                          </span>
+                  <Card key={venda._id} className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold">#{venda.numeroVenda}</span>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            {getPaymentIcon(venda.formaPagamento)}
+                            {getPaymentLabel(venda.formaPagamento)}
+                          </Badge>
                         </div>
-                        <span>R$ {item.subtotal.toFixed(2)}</span>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(venda.dataVenda).toLocaleString('pt-BR')} • {venda.cafeteria}
+                        </div>
+                         <div className="text-sm text-muted-foreground mt-1">
+                           Vendedor: {venda.usuario?.nome || 'N/A'}
+                         </div>
                       </div>
-                    ))}
-                  </div>
-                </Card>
+                      <div className="text-right">
+                        <div className="text-lg font-bold">R$ {venda.total.toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    {venda.tipoCliente === 'colaborador' && (
+                      <div className="bg-muted p-3 rounded-md mb-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">Colaborador:</span>
+                          <span>{venda.colaborador?.nome || 'Colaborador'}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Itens da Venda */}
+                    <div className="space-y-2">
+                      {venda.itens.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <div>
+                            <span className="font-medium">{item.nomeProduto}</span>
+                            <span className="text-muted-foreground ml-2">
+                              {item.quantidade} × R$ {item.precoUnitario.toFixed(2)}
+                            </span>
+                          </div>
+                          <span>R$ {item.subtotal.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
                 )
               })}
             </div>

@@ -90,12 +90,6 @@ export async function GET(request: NextRequest) {
         }
       },
       {
-        $unwind: { path: "$colaborador", preserveNullAndEmptyArrays: true }
-      },
-      {
-        $unwind: { path: "$usuario", preserveNullAndEmptyArrays: true }
-      },
-      {
         $sort: { dataVenda: -1 }
       },
       {
@@ -109,14 +103,34 @@ export async function GET(request: NextRequest) {
     const vendas = await db.collection("vendas")
       .aggregate(aggregatePipeline)
       .toArray();
+      
+    // DEBUG ADICIONADO
+    console.log('=== DEBUG API VENDAS ===');
+    console.log('Total de vendas:', vendas.length);
+    if (vendas.length > 0) {
+      console.log('Primeira venda:', {
+        _id: vendas[0]._id,
+        numeroVenda: vendas[0].numeroVenda,
+        usuarioId: vendas[0].usuarioId,
+        usuario: vendas[0].usuario, // ← O QUE TEM AQUI?
+        colaboradorId: vendas[0].colaboradorId,
+        colaborador: vendas[0].colaborador, // ← O QUE TEM AQUI?
+        lookupResult: {
+          usuarioLookup: vendas[0].usuario,
+          colaboradorLookup: vendas[0].colaborador
+        }
+      });
+    }
+
 
     return NextResponse.json(vendas.map(v => ({
       ...v,
       _id: v._id.toString(),
       usuarioId: v.usuarioId?.toString(),
       colaboradorId: v.colaboradorId?.toString(),
-      usuario: v.usuario ? { ...v.usuario, _id: v.usuario._id.toString() } : null,
-      colaborador: v.colaborador ? { ...v.colaborador, _id: v.colaborador._id.toString() } : null,
+      // Mapear o array para objeto
+      usuario: v.usuario?.[0] ? { ...v.usuario[0], _id: v.usuario[0]._id.toString() } : null,
+      colaborador: v.colaborador?.[0] ? { ...v.colaborador[0], _id: v.colaborador[0]._id.toString() } : null,
     })));
 
   } catch (error) {
