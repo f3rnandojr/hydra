@@ -1,7 +1,7 @@
 import { getProducts } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { CreateProductButton } from "@/components/app/produtos/buttons";
+import { ProductsTable } from "@/components/app/produtos/table";
 
 export default async function ProdutosPage() {
   const products = await getProducts();
@@ -11,10 +11,7 @@ export default async function ProdutosPage() {
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Produtos</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novo Produto
-          </Button>
+          <CreateProductButton />
         </div>
       </div>
       <Card>
@@ -22,8 +19,7 @@ export default async function ProdutosPage() {
           <CardTitle>Lista de Produtos</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Tabela de produtos aparecerá aqui.</p>
-          <pre>{JSON.stringify(products, null, 2)}</pre>
+          <ProductsTable products={products} />
         </CardContent>
       </Card>
     </div>

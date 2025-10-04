@@ -23,7 +23,7 @@ export type Product = {
 };
 
 export type EntryItem = {
-  produtoId: ObjectId;
+  produtoId: string | ObjectId;
   quantidade: number;
   saldoAnterior: number;
   saldoAtual: number;
@@ -36,5 +36,5 @@ export type Entry = {
   itens: EntryItem[];
   observacao?: string;
   dataEntrada: Date;
-  usuarioId: ObjectId;
+  usuarioId: string | ObjectId;
 };

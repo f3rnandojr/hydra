@@ -1,6 +1,6 @@
 import clientPromise from './mongodb';
 import { ObjectId, type WithId, MongoClient } from 'mongodb';
-import type { Collaborator, Product, Entry } from './definitions';
+import type { Collaborator, Product, Entry, EntryItem } from './definitions';
 import bcrypt from 'bcrypt';
 
 async function getDb() {
@@ -154,19 +154,25 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
 
 // Entries Functions
-export async function createEntry(data: Omit<Entry, '_id' | 'dataEntrada' | 'itens'> & { itens: Omit<Entry['itens'][0], 'saldoAnterior' | 'saldoAtual'>[] }, client: MongoClient) {
-    const db = client.db('hydra');
+export async function createEntry(data: Omit<Entry, '_id' | 'dataEntrada' | 'itens' | 'usuarioId'> & { itens: Omit<EntryItem, 'saldoAnterior' | 'saldoAtual' | 'produtoId'> & {produtoId: string} [], usuarioId: string }) {
+    const client = await clientPromise;
     const session = client.startSession();
+    const db = client.db('hydra');
 
     try {
         await session.withTransaction(async () => {
             const productsCollection = db.collection('produtos');
             const entriesCollection = db.collection('entradas');
 
-            const processedItems: Entry['itens'] = [];
+            const processedItems: EntryItem[] = [];
 
             for (const item of data.itens) {
-                const product = await productsCollection.findOne({ _id: new ObjectId(item.produtoId) }, { session });
+                if (!ObjectId.isValid(item.produtoId)) {
+                     throw new Error(`ID de produto inválido: ${item.produtoId}`);
+                }
+                const produtoId = new ObjectId(item.produtoId);
+
+                const product = await productsCollection.findOne({ _id: produtoId }, { session });
                 if (!product) {
                     throw new Error(`Produto com ID ${item.produtoId} não encontrado.`);
                 }
@@ -175,21 +181,23 @@ export async function createEntry(data: Omit<Entry, '_id' | 'dataEntrada' | 'ite
                 const saldoAtual = saldoAnterior + item.quantidade;
 
                 await productsCollection.updateOne(
-                    { _id: new ObjectId(item.produtoId) },
+                    { _id: produtoId },
                     { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
                     { session }
                 );
 
                 processedItems.push({
-                    ...item,
-                    produtoId: new ObjectId(item.produtoId),
+                    produtoId: produtoId,
+                    quantidade: item.quantidade,
                     saldoAnterior,
                     saldoAtual,
                 });
             }
 
             const newEntry = {
-                ...data,
+                tipo: data.tipo,
+                numeroNotaFiscal: data.numeroNotaFiscal,
+                observacao: data.observacao,
                 itens: processedItems,
                 dataEntrada: new Date(),
                 usuarioId: new ObjectId(data.usuarioId),
