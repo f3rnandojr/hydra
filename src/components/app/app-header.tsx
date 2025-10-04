@@ -11,13 +11,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function AppHeader() {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, carregando } = useAuth();
+  const router = useRouter();
 
-  if (!usuario) {
+  useEffect(() => {
+    // Se não está carregando e não há usuário, redireciona para o login
+    if (!carregando && !usuario) {
+      router.push('/login');
+    }
+  }, [usuario, carregando, router]);
+
+
+  // Não renderiza nada até que o estado de autenticação seja resolvido
+  // ou se o usuário não estiver logado para evitar piscar o conteúdo
+  if (carregando || !usuario) {
     return null;
   }
+
 
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
