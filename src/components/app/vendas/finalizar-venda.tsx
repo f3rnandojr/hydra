@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -59,7 +60,8 @@ export function FinalizarVenda({
         // Buscar cafeteria ativa
         const cafeteriaRes = await fetch('/api/parametros');
         if (!cafeteriaRes.ok) {
-          throw new Error("Não foi possível carregar a configuração da cafeteria. Contate o suporte.");
+          const errorData = await cafeteriaRes.json();
+          throw new Error(errorData.error || "Não foi possível carregar a configuração da cafeteria.");
         }
         const cafeteriaParam = await cafeteriaRes.json();
         setCafeteriaAtiva(cafeteriaParam.valor);
@@ -177,6 +179,14 @@ export function FinalizarVenda({
         )}
 
         <div className="space-y-6">
+           {/* Cafeteria (somente leitura) */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Cafeteria</Label>
+            <div className="p-3 bg-muted rounded-md text-sm font-medium text-muted-foreground">
+              {isLoading ? "Carregando..." : cafeteriaAtiva || "Não configurada"}
+            </div>
+          </div>
+        
           {/* Tipo de Cliente (Informativo) */}
           <div className="space-y-3">
              <Label>Tipo de Cliente</Label>
@@ -203,7 +213,7 @@ export function FinalizarVenda({
           {tipoCliente === "colaborador" && (
             <div className="space-y-3">
               <Label htmlFor="colaborador">Colaborador *</Label>
-              <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading}>
+              <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading || !colaboradores.length}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o colaborador" />
                 </SelectTrigger>
@@ -215,9 +225,9 @@ export function FinalizarVenda({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
-                Selecione o colaborador que está realizando a compra.
-              </p>
+              {colaboradores.length === 0 && !isLoading && (
+                 <p className="text-sm text-destructive">Nenhum colaborador ativo encontrado.</p>
+              )}
             </div>
           )}
 
@@ -269,3 +279,5 @@ export function FinalizarVenda({
     </Dialog>
   );
 }
+
+    
