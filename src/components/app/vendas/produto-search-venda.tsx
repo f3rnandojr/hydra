@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/definitions";
+import { Input } from "@/components/ui/input";
 
 interface VendaProdutoSearchProps {
   onProductSelect: (produto: Product) => void;
