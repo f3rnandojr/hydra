@@ -17,7 +17,8 @@ import {
   DollarSign, 
   QrCode, 
   User, 
-  Store 
+  Store,
+  Receipt
 } from "lucide-react";
 
 interface Venda {
@@ -31,6 +32,10 @@ interface Venda {
     _id: string;
     nome: string;
     email: string;
+  };
+  usuario?: { // Vendedor
+    _id: string;
+    nome: string;
   };
   formaPagamento: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar";
   itens: Array<{
@@ -128,7 +133,7 @@ export function ControleVendas() {
       case 'cartao_credito': 
       case 'cartao_debito': return <CreditCard className="h-4 w-4" />;
       case 'pix': return <QrCode className="h-4 w-4" />;
-      case 'apagar': return <User className="h-4 w-4" />;
+      case 'apagar': return <Receipt className="h-4 w-4" />;
       default: return <DollarSign className="h-4 w-4" />;
     }
   };
@@ -358,9 +363,6 @@ export function ControleVendas() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold">#{venda.numeroVenda}</span>
-                        <Badge variant={venda.tipoCliente === 'colaborador' ? 'secondary' : 'outline'}>
-                          {venda.tipoCliente === 'colaborador' ? 'Colaborador' : 'Normal'}
-                        </Badge>
                         <Badge variant="outline" className="flex items-center gap-1">
                           {getPaymentIcon(venda.formaPagamento)}
                           {getPaymentLabel(venda.formaPagamento)}
@@ -369,20 +371,21 @@ export function ControleVendas() {
                       <div className="text-sm text-muted-foreground">
                         {new Date(venda.dataVenda).toLocaleString('pt-BR')} • {venda.cafeteria}
                       </div>
+                       <div className="text-sm text-muted-foreground mt-1">
+                        Vendedor: {venda.usuario?.nome || 'N/A'}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-bold">R$ {venda.total.toFixed(2)}</div>
                     </div>
                   </div>
 
-                  {/* Informações do Colaborador se for venda à pagar */}
-                  {venda.tipoCliente === 'colaborador' && venda.colaborador && (
+                  {venda.tipoCliente === 'colaborador' && (
                     <div className="bg-muted p-3 rounded-md mb-3">
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4" />
                         <span className="font-medium">Colaborador:</span>
-                        <span>{venda.colaborador.nome}</span>
-                        <span className="text-muted-foreground">({venda.colaborador.email})</span>
+                        <span>{venda.colaborador?.nome}</span>
                       </div>
                     </div>
                   )}

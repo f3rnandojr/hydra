@@ -68,39 +68,57 @@ export async function GET(request: NextRequest) {
       filtro.cafeteria = cafeteria;
     }
 
-    // Buscar vendas
+    // Pipeline de agregação para buscar vendas e popular dados relacionados
+    const aggregatePipeline: any[] = [
+      {
+        $match: filtro
+      },
+      {
+        $lookup: {
+          from: "colaboradores",
+          localField: "colaboradorId",
+          foreignField: "_id",
+          as: "colaborador"
+        }
+      },
+      {
+        $lookup: {
+          from: "usuarios",
+          localField: "usuarioId",
+          foreignField: "_id",
+          as: "usuario"
+        }
+      },
+      {
+        $unwind: { path: "$colaborador", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $unwind: { path: "$usuario", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $sort: { dataVenda: -1 }
+      },
+      {
+        $project: { // Projetar para formatar a saída e remover campos desnecessários
+          "usuario.senha": 0,
+          "colaborador.senha": 0
+        }
+      }
+    ];
+
     const vendas = await db.collection("vendas")
-      .find(filtro)
-      .sort({ dataVenda: -1 })
+      .aggregate(aggregatePipeline)
       .toArray();
 
-    // Buscar informações dos colaboradores para vendas do tipo colaborador
-    const vendasComColaboradores = await Promise.all(
-      vendas.map(async (venda) => {
-        if (venda.tipoCliente === 'colaborador' && venda.colaboradorId) {
-          const colaborador = await db.collection("colaboradores").findOne({
-            _id: new ObjectId(venda.colaboradorId)
-          });
-          
-          return {
-            ...venda,
-            _id: venda._id.toString(),
-            colaborador: colaborador ? {
-              _id: colaborador._id.toString(),
-              nome: colaborador.nome,
-              email: colaborador.email
-            } : undefined
-          };
-        }
-        
-        return {
-          ...venda,
-          _id: venda._id.toString()
-        };
-      })
-    );
+    return NextResponse.json(vendas.map(v => ({
+      ...v,
+      _id: v._id.toString(),
+      usuarioId: v.usuarioId?.toString(),
+      colaboradorId: v.colaboradorId?.toString(),
+      usuario: v.usuario ? { ...v.usuario, _id: v.usuario._id.toString() } : null,
+      colaborador: v.colaborador ? { ...v.colaborador, _id: v.colaborador._id.toString() } : null,
+    })));
 
-    return NextResponse.json(vendasComColaboradores);
   } catch (error) {
     console.error("Erro ao buscar relatório de vendas:", error);
     return NextResponse.json(

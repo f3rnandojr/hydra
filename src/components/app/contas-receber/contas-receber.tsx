@@ -9,11 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
+import type { ContaReceber as ContaReceberType, Collaborator } from "@/lib/definitions";
 
-interface ContaReceber {
-  _id: string;
-  vendaId: string;
-  colaboradorId: string;
+
+interface ContaReceber extends ContaReceberType {
   colaborador: {
     _id: string;
     nome: string;
@@ -30,11 +29,10 @@ interface ContaReceber {
       precoUnitario: number;
     }>;
   };
-  valor: number;
-  dataVenda: string;
-  status: "em_debito" | "quitado";
-  dataQuitacao?: string;
-  formaQuitacao?: string;
+  usuarioQuitacao?: {
+    _id: string;
+    nome: string;
+  }
 }
 
 interface Filtros {
@@ -46,7 +44,7 @@ export function ContasReceber() {
   const { toast } = useToast();
   const { usuario } = useAuth();
   const [contas, setContas] = useState<ContaReceber[]>([]);
-  const [colaboradores, setColaboradores] = useState<any[]>([]);
+  const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
     status: "em_debito",
@@ -298,7 +296,7 @@ export function ContasReceber() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold">Venda #{conta.venda?.numeroVenda}</span>
-                        <Badge variant={conta.status === 'quitado' ? 'default' : 'secondary'}>
+                        <Badge variant={conta.status === 'quitado' ? 'default' : 'secondary'} className={conta.status === 'quitado' ? 'bg-green-500/80' : 'bg-amber-500/80'}>
                           {conta.status === 'quitado' ? 'QUITADO' : 'EM DÉBITO'}
                         </Badge>
                       </div>
@@ -343,10 +341,9 @@ export function ContasReceber() {
                   {conta.status === 'quitado' && conta.dataQuitacao && (
                     <div className="flex items-center gap-2 text-sm text-green-600 mb-3">
                       <CheckCircle className="h-4 w-4" />
-                      <span>Quitado em: {new Date(conta.dataQuitacao).toLocaleString('pt-BR')}</span>
-                      {conta.formaQuitacao && (
-                        <span className="text-muted-foreground">({conta.formaQuitacao})</span>
-                      )}
+                      <span>
+                        Quitado em: {new Date(conta.dataQuitacao).toLocaleString('pt-BR')} por <b>{conta.usuarioQuitacao?.nome || 'N/A'}</b>
+                      </span>
                     </div>
                   )}
 

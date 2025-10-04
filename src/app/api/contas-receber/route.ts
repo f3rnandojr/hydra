@@ -37,10 +37,21 @@ export async function GET(request: NextRequest) {
           }
         },
         {
+          $lookup: {
+            from: "usuarios",
+            localField: "usuarioQuitacaoId",
+            foreignField: "_id",
+            as: "usuarioQuitacao"
+          }
+        },
+        {
           $unwind: { path: "$colaborador", preserveNullAndEmptyArrays: true }
         },
         {
           $unwind: { path: "$venda", preserveNullAndEmptyArrays: true }
+        },
+        {
+          $unwind: { path: "$usuarioQuitacao", preserveNullAndEmptyArrays: true }
         },
         {
           $sort: { dataVenda: -1 }
@@ -60,6 +71,10 @@ export async function GET(request: NextRequest) {
       venda: conta.venda ? {
         ...conta.venda,
         _id: conta.venda._id.toString()
+      } : null,
+      usuarioQuitacao: conta.usuarioQuitacao ? {
+        _id: conta.usuarioQuitacao._id.toString(),
+        nome: conta.usuarioQuitacao.nome
       } : null
     })));
   } catch (error) {
@@ -74,7 +89,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { contaId, status, formaQuitacao } = await request.json();
-    const usuarioId = "669ff07e8c3395d96a513f18"; // Temporário
+    const authHeader = request.headers.get('authorization');
+    const usuarioId = authHeader?.split(' ')[1] || "669ff07e8c3395d96a513f18"; // Temporário
 
     if (!contaId || !status) {
       return NextResponse.json(
@@ -89,7 +105,7 @@ export async function POST(request: NextRequest) {
     const updateData: any = {
       status: status,
       dataAtualizacao: new Date(),
-      usuarioQuitacaoId: new ObjectId(usuarioId), // 👈 NOVO - quem quitou
+      usuarioQuitacaoId: new ObjectId(usuarioId),
     };
 
     if (status === "quitado") {
