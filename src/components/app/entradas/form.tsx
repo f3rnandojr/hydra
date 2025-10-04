@@ -277,7 +277,7 @@ function ProductSearch({ onProductSelect, selectedProductId }: { onProductSelect
         setProducts([]);
         return;
       }
-      const response = await fetch(`/api/produtos?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/produtos/search?q=${encodeURIComponent(query)}`);
       const data: Product[] = await response.json();
       setProducts(data);
       if (data.length === 1 && /^\d{13}$/.test(query)) {
