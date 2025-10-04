@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Users, User, AlertTriangle } from "lucide-react";
+import { Check, Users, User, AlertTriangle, CreditCard, DollarSign, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,16 +49,9 @@ export function FinalizarVenda({
   const [cafeteriaAtiva, setCafeteriaAtiva] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
   
-  // Efeito para definir "apagar" automaticamente para colaborador
-  useEffect(() => {
-    if (tipoCliente === 'colaborador') {
-      setFormaPagamento('apagar');
-    } else {
-      setFormaPagamento('dinheiro'); // ou mantém o anterior
-    }
-  }, [tipoCliente]);
+  // ✅ NOVO STATE: Forma de pagamento
+  const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
 
   // Buscar colaboradores e cafeteria ativa
   useEffect(() => {
@@ -66,7 +59,7 @@ export function FinalizarVenda({
       setIsLoading(true);
       setError(null);
       try {
-        // Buscar cafeteria ativa - ✅ CORREÇÃO
+        // Buscar cafeteria ativa
         const cafeteriaRes = await fetch('/api/parametros?chave=CAFETERIA_ATIVA');
         if (!cafeteriaRes.ok) {
           const errorData = await cafeteriaRes.json();
@@ -97,6 +90,15 @@ export function FinalizarVenda({
     }
   }, [open, tipoCliente]);
   
+  // ✅ NOVO EFFECT: Definir "apagar" automaticamente para colaborador
+  useEffect(() => {
+    if (tipoCliente === 'colaborador') {
+      setFormaPagamento('apagar');
+    } else {
+      setFormaPagamento('dinheiro');
+    }
+  }, [tipoCliente]);
+
   // Resetar colaborador selecionado quando o tipo de cliente muda
   useEffect(() => {
     if (tipoCliente === 'normal') {
@@ -122,11 +124,11 @@ export function FinalizarVenda({
         cafeteria: cafeteriaAtiva,
         tipoCliente,
         colaboradorId: tipoCliente === "colaborador" && colaboradorId ? colaboradorId : undefined,
-        formaPagamento, // 👈 NOVO CAMPO
+        formaPagamento, // ✅ NOVO CAMPO
         itens: itens.map(item => ({
           produtoId: item.produto._id.toString(),
           nomeProduto: item.produto.nome,
-          codigoEAN: item.produto.codigoEAN || "", // ✅ Garante que não seja undefined
+          codigoEAN: item.produto.codigoEAN || "",
           quantidade: item.quantidade,
           precoUnitario: item.precoUnitario,
           subtotal: item.quantidade * item.precoUnitario
@@ -145,6 +147,7 @@ export function FinalizarVenda({
         onVendaFinalizada();
         onOpenChange(false);
         setColaboradorId(""); // Reset form
+        setFormaPagamento("dinheiro"); // Reset para padrão
       } else {
         const errorResult = await response.json();
         throw new Error(errorResult.message || 'Erro desconhecido ao finalizar venda');
@@ -165,6 +168,30 @@ export function FinalizarVenda({
                               !cafeteriaAtiva || 
                               !!error ||
                               (tipoCliente === "colaborador" && !colaboradorId);
+
+  // ✅ FUNÇÃO PARA OBTER ÍCONE DO PAGAMENTO
+  const getPaymentIcon = (type: string) => {
+    switch (type) {
+      case 'dinheiro': return <DollarSign className="h-4 w-4" />;
+      case 'cartao_credito': 
+      case 'cartao_debito': return <CreditCard className="h-4 w-4" />;
+      case 'pix': return <QrCode className="h-4 w-4" />;
+      case 'apagar': return <User className="h-4 w-4" />;
+      default: return <DollarSign className="h-4 w-4" />;
+    }
+  };
+
+  // ✅ FUNÇÃO PARA OBTER LABEL DO PAGAMENTO
+  const getPaymentLabel = (type: string) => {
+    switch (type) {
+      case 'dinheiro': return "Dinheiro";
+      case 'cartao_credito': return "Cartão de Crédito";
+      case 'cartao_debito': return "Cartão de Débito";
+      case 'pix': return "PIX";
+      case 'apagar': return "À Pagar";
+      default: return type;
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -219,6 +246,67 @@ export function FinalizarVenda({
             </div>
           </div>
 
+          {/* ✅ NOVO: Forma de Pagamento */}
+          <div className="space-y-3">
+            <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+            <Select 
+              value={formaPagamento} 
+              onValueChange={(value: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar") => 
+                setFormaPagamento(value)
+              }
+              disabled={tipoCliente === 'colaborador' || isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    {getPaymentIcon(formaPagamento)}
+                    {getPaymentLabel(formaPagamento)}
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dinheiro">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Dinheiro
+                  </div>
+                </SelectItem>
+                <SelectItem value="cartao_credito">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Cartão de Crédito
+                  </div>
+                </SelectItem>
+                <SelectItem value="cartao_debito">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Cartão de Débito
+                  </div>
+                </SelectItem>
+                <SelectItem value="pix">
+                  <div className="flex items-center gap-2">
+                    <QrCode className="h-4 w-4" />
+                    PIX
+                  </div>
+                </SelectItem>
+                <SelectItem 
+                  value="apagar" 
+                  disabled={tipoCliente !== 'colaborador'}
+                >
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {tipoCliente === 'colaborador' ? "À Pagar" : "Somente para colaboradores"}
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {tipoCliente === 'colaborador' && (
+              <p className="text-sm text-muted-foreground">
+                Pagamento automaticamente definido como "À Pagar" para colaboradores
+              </p>
+            )}
+          </div>
+
           {/* Seleção de Colaborador (se for venda para colaborador) */}
           {tipoCliente === "colaborador" && (
             <div className="space-y-3">
@@ -240,36 +328,6 @@ export function FinalizarVenda({
               )}
             </div>
           )}
-
-          {/* Forma de Pagamento */}
-          <div className="space-y-3">
-            <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
-            <Select 
-              value={formaPagamento} 
-              onValueChange={(value: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar") => 
-                setFormaPagamento(value)
-              }
-              disabled={tipoCliente === 'colaborador'} // 👈 Desabilita se for colaborador
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a forma de pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="apagar" disabled>
-                  {tipoCliente === 'colaborador' ? "À Pagar" : "Somente para colaboradores"}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {tipoCliente === 'colaborador' && (
-              <p className="text-sm text-muted-foreground">
-                Pagamento automaticamente definido como "À Pagar" para colaboradores
-              </p>
-            )}
-          </div>
 
           {/* Resumo da Venda */}
           <div className="space-y-3">
@@ -319,3 +377,5 @@ export function FinalizarVenda({
     </Dialog>
   );
 }
+
+    
