@@ -60,6 +60,10 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
     resolver: zodResolver(activeTab === 'nota_fiscal' ? notaFiscalSchema : ajusteSchema),
     defaultValues: {
       tipo: activeTab,
+      numeroNotaFiscal: "",
+      produtoId: "",
+      novoSaldo: 0,
+      itens: [],
     },
   });
 
@@ -70,11 +74,13 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
 
   // Reset form when tab changes
   useEffect(() => {
-    form.reset({ tipo: activeTab });
-    if (activeTab === 'nota_fiscal' && 'itens' in form.getValues() && form.getValues().itens?.length === 0) {
-      // @ts-ignore
-      form.setValue('itens', []);
-    }
+    form.reset({
+      tipo: activeTab,
+      numeroNotaFiscal: "",
+      produtoId: "",
+      novoSaldo: 0,
+      itens: [],
+    });
   }, [activeTab, form]);
   
   useEffect(() => {
@@ -126,7 +132,11 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
                 <FormItem>
                   <FormLabel>Número da Nota Fiscal</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: 123456" {...field} />
+                    <Input 
+                      placeholder="Ex: 123456" 
+                      {...field} 
+                      value={field.value || ""} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,7 +163,12 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
                               control={form.control}
                               name={`itens.${index}.quantidade` as any}
                               render={({ field }) => (
-                                <Input type="number" step="0.01" {...field} />
+                                <Input 
+                                  type="number" 
+                                  step="0.01" 
+                                  {...field}
+                                  value={field.value ?? ""}
+                                />
                               )}
                             />
                         </TableCell>
@@ -201,7 +216,12 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
                 <FormItem>
                   <FormLabel>Novo Saldo de Estoque</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="Ex: 50" {...field} />
+                    <Input 
+                      type="number" 
+                      placeholder="Ex: 50" 
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormDescription>Informe a quantidade correta do produto em estoque.</FormDescription>
                   <FormMessage />
