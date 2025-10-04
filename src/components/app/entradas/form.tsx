@@ -25,6 +25,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Schemas
 const itemSchema = z.object({
@@ -58,6 +59,7 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("nota_fiscal");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cafeteria, setCafeteria] = useState("cafeteria_01");
 
   const form = useForm<FormData>({
     resolver: zodResolver(activeTab === 'nota_fiscal' ? notaFiscalSchema : ajusteSchema),
@@ -89,6 +91,7 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
     setIsSubmitting(true);
     const formData = new FormData();
     formData.append("tipo", data.tipo);
+    formData.append("cafeteria", cafeteria); 
 
     if (data.tipo === 'nota_fiscal') {
       formData.append("numeroNotaFiscal", data.numeroNotaFiscal);
@@ -128,6 +131,21 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormItem>
+          <FormLabel>Cafeteria</FormLabel>
+          <Select value={cafeteria} onValueChange={setCafeteria}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a cafeteria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cafeteria_01">Cafeteria 01</SelectItem>
+              <SelectItem value="cafeteria_02">Cafeteria 02</SelectItem>
+            </SelectContent>
+          </Select>
+          <FormDescription>
+            Selecione a cafeteria onde o estoque será registrado
+          </FormDescription>
+        </FormItem>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="nota_fiscal">Nota Fiscal</TabsTrigger>

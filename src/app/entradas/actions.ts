@@ -5,39 +5,41 @@ import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// Schema para Nota Fiscal
 const itemSchema = z.object({
   produtoId: z.string().min(1, "Produto é obrigatório"),
   quantidade: z.number().min(0.01, "Quantidade deve ser maior que zero"),
   precoCusto: z.number().min(0.01, "Preço de custo deve ser maior que zero"),
 });
 
-const notaFiscalSchema = z.object({
+const baseSchema = z.object({
+  tipo: z.string(),
+  cafeteria: z.string().min(1, "Cafeteria é obrigatória")
+});
+
+const notaFiscalSchema = baseSchema.extend({
   tipo: z.literal("nota_fiscal"),
   numeroNotaFiscal: z.string().min(1, "Número da nota é obrigatório"),
   itens: z.array(itemSchema).min(1, "Adicione pelo menos um item")
 });
 
-// Schema para Ajuste
-const ajusteSchema = z.object({
+const ajusteSchema = baseSchema.extend({
   tipo: z.literal("ajuste"),
   produtoId: z.string().min(1, "Produto é obrigatório"),
   novoSaldo: z.number().min(0, "Saldo não pode ser negativo")
 });
 
-// Schema principal discriminado
 const entradaSchema = z.discriminatedUnion("tipo", [
   notaFiscalSchema,
   ajusteSchema
 ]);
 
 export async function createEntrada(prevState: any, formData: FormData) {
-  // O frontend precisará formatar os itens como uma string JSON
   const rawItems = formData.get("itens");
   const parsedItems = rawItems ? JSON.parse(rawItems as string) : [];
 
   const rawData = {
     tipo: formData.get("tipo"),
+    cafeteria: formData.get("cafeteria"),
     numeroNotaFiscal: formData.get("numeroNotaFiscal"),
     produtoId: formData.get("produtoId"),
     novoSaldo: formData.get("novoSaldo") ? Number(formData.get("novoSaldo")) : undefined,
@@ -66,20 +68,26 @@ export async function createEntrada(prevState: any, formData: FormData) {
       if (data.tipo === "nota_fiscal") {
         const itensComSaldos = await Promise.all(
           data.itens.map(async (item) => {
-            const produto = await db.collection("produtos").findOne(
-              { _id: new ObjectId(item.produtoId) },
+            const estoqueAtual = await db.collection("estoque").findOne(
+              { 
+                produtoId: new ObjectId(item.produtoId),
+                cafeteria: data.cafeteria 
+              },
               { session }
             );
             
-            if (!produto) {
-              throw new Error(`Produto ${item.produtoId} não encontrado`);
+            if (!estoqueAtual) {
+              throw new Error(`Produto ${item.produtoId} não encontrado na cafeteria ${data.cafeteria}`);
             }
             
-            const saldoAnterior = produto.saldo;
+            const saldoAnterior = estoqueAtual.saldo;
             const saldoAtual = saldoAnterior + item.quantidade;
             
-            await db.collection("produtos").updateOne(
-              { _id: new ObjectId(item.produtoId) },
+            await db.collection("estoque").updateOne(
+              { 
+                produtoId: new ObjectId(item.produtoId),
+                cafeteria: data.cafeteria 
+              },
               { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
               { session }
             );
@@ -89,7 +97,8 @@ export async function createEntrada(prevState: any, formData: FormData) {
               quantidade: item.quantidade,
               precoCusto: item.precoCusto,
               saldoAnterior,
-              saldoAtual
+              saldoAtual,
+              cafeteria: data.cafeteria
             };
           })
         );
@@ -97,6 +106,7 @@ export async function createEntrada(prevState: any, formData: FormData) {
         await db.collection("entradas").insertOne({
           tipo: data.tipo,
           numeroNotaFiscal: data.numeroNotaFiscal,
+          cafeteria: data.cafeteria,
           itens: itensComSaldos,
           dataEntrada: new Date(),
           usuarioId: new ObjectId("669ff07e8c3395d96a513f18") // TODO: Substituir por ID de usuário autenticado
@@ -105,31 +115,39 @@ export async function createEntrada(prevState: any, formData: FormData) {
         message = "Entrada de nota fiscal registrada com sucesso!";
         
       } else { // data.tipo === "ajuste"
-        const produto = await db.collection("produtos").findOne(
-          { _id: new ObjectId(data.produtoId) },
+        const estoqueAtual = await db.collection("estoque").findOne(
+          { 
+            produtoId: new ObjectId(data.produtoId),
+            cafeteria: data.cafeteria 
+          },
           { session }
         );
         
-        if (!produto) {
-          throw new Error("Produto não encontrado");
+        if (!estoqueAtual) {
+          throw new Error("Produto não encontrado na cafeteria selecionada");
         }
         
-        const saldoAnterior = produto.saldo;
+        const saldoAnterior = estoqueAtual.saldo;
         const saldoAtual = data.novoSaldo;
         
-        await db.collection("produtos").updateOne(
-          { _id: new ObjectId(data.produtoId) },
+        await db.collection("estoque").updateOne(
+          { 
+            produtoId: new ObjectId(data.produtoId),
+            cafeteria: data.cafeteria 
+          },
           { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
           { session }
         );
         
         await db.collection("entradas").insertOne({
           tipo: data.tipo,
+          cafeteria: data.cafeteria,
           itens: [{
             produtoId: new ObjectId(data.produtoId),
             quantidade: saldoAtual - saldoAnterior, // diferença
             saldoAnterior,
-            saldoAtual
+            saldoAtual,
+            cafeteria: data.cafeteria
           }],
           observacao: "Ajuste de estoque",
           dataEntrada: new Date(),
