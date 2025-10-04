@@ -1,3 +1,4 @@
+
 import { ParametrosAdmin } from "@/components/app/admin/parametros-admin";
 
 export default function AdminPage() {
