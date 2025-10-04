@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Check, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -60,7 +59,7 @@ export function FinalizarVenda({
         console.error('Erro ao buscar colaboradores:', error);
          toast({
           title: "Erro ao buscar colaboradores",
-          description: "Não foi possível carregar a lista de colaboradores.",
+          description: "Não foi possível carregar la lista de colaboradores.",
           variant: "destructive",
         });
       }
@@ -136,7 +135,9 @@ export function FinalizarVenda({
         <DialogHeader>
           <DialogTitle>Finalizar Venda</DialogTitle>
           <DialogDescription>
-            Confirme os detalhes da venda antes de finalizar.
+            {tipoCliente === "colaborador"
+              ? "Venda para colaborador - selecione o colaborador"
+              : "Confirme os detalhes da venda antes de finalizar."}
           </DialogDescription>
         </DialogHeader>
 
@@ -156,14 +157,24 @@ export function FinalizarVenda({
           </div>
 
           {/* Tipo de Cliente (Informativo) */}
-          <div className="space-y-2">
+          <div className="space-y-3">
              <Label>Tipo de Cliente</Label>
-             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm border ${
+             <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${
                 tipoCliente === "colaborador" 
                     ? "bg-accent/10 text-accent-foreground border-accent/20" 
                     : "bg-muted text-muted-foreground border-border"
                 }`}>
-                {tipoCliente === 'colaborador' ? 'Colaborador' : 'Cliente Normal'}
+                {tipoCliente === 'colaborador' ? (
+                    <>
+                        <Users className="h-4 w-4" />
+                        <span>Venda para Colaborador</span>
+                    </>
+                ) : (
+                    <>
+                        <User className="h-4 w-4" />
+                        <span>Venda para Cliente Normal</span>
+                    </>
+                )}
             </div>
           </div>
 
@@ -171,7 +182,7 @@ export function FinalizarVenda({
           {/* Seleção de Colaborador (se for venda para colaborador) */}
           {tipoCliente === "colaborador" && (
             <div className="space-y-3">
-              <Label htmlFor="colaborador">Colaborador</Label>
+              <Label htmlFor="colaborador">Colaborador *</Label>
               <Select value={colaboradorId} onValueChange={setColaboradorId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o colaborador" />
@@ -184,6 +195,9 @@ export function FinalizarVenda({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-sm text-muted-foreground">
+                Selecione o colaborador que está realizando a compra.
+              </p>
             </div>
           )}
 

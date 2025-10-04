@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProdutoSearchVenda } from "./produto-search-venda";
 import { CarrinhoVenda } from "./carrinho-venda";
 import { FinalizarVenda } from "./finalizar-venda";
-import type { Product, ItemVenda } from "@/lib/definitions";
+import type { Product } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 
 
