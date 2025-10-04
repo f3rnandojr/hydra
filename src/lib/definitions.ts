@@ -63,6 +63,7 @@ export type Venda = {
   itens: ItemVenda[];
   total: number;
   status: "finalizada" | "cancelada";
+  usuarioId: string | ObjectId;
   dataCriacao: Date;
 };
 
@@ -95,4 +96,18 @@ export type Usuario = {
   status: "ativo" | "inativo";
   dataCriacao: Date;
   dataAtualizacao: Date;
+};
+
+export type ContaReceber = {
+  _id: string;
+  vendaId: string;
+  colaboradorId: string;
+  valor: number;
+  dataVenda: Date;
+  status: "em_debito" | "quitado";
+  dataCriacao: Date;
+  dataAtualizacao: Date;
+  dataQuitacao?: Date;
+  formaQuitacao?: string;
+  usuarioQuitacaoId?: string | ObjectId;
 };

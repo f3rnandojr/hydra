@@ -25,6 +25,14 @@ const vendaSchema = z.object({
 export async function POST(request: NextRequest) {
   const client = await clientPromise;
   const session = client.startSession();
+  const authHeader = request.headers.get('authorization');
+  let usuarioId = "669ff07e8c3395d96a513f18"; // Default temporário
+
+  if (authHeader?.startsWith('Bearer ')) {
+    // Em produção, validar token JWT
+    const token = authHeader.substring(7);
+    // Decodificar token para obter userId (simplificado por enquanto)
+  }
 
   try {
     const body = await request.json();
@@ -85,6 +93,7 @@ export async function POST(request: NextRequest) {
         itens: itens.map(it => ({...it, produtoId: it.produtoId})),
         total: totalVenda,
         status: "finalizada",
+        usuarioId: new ObjectId(usuarioId),
         dataCriacao: new Date(),
       };
 

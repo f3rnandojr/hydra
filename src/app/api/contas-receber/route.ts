@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { contaId, status, formaQuitacao } = await request.json();
+    const usuarioId = "669ff07e8c3395d96a513f18"; // Temporário
 
     if (!contaId || !status) {
       return NextResponse.json(
@@ -87,7 +88,8 @@ export async function POST(request: NextRequest) {
 
     const updateData: any = {
       status: status,
-      dataAtualizacao: new Date()
+      dataAtualizacao: new Date(),
+      usuarioQuitacaoId: new ObjectId(usuarioId), // 👈 NOVO - quem quitou
     };
 
     if (status === "quitado") {

@@ -33,7 +33,7 @@ const entradaSchema = z.discriminatedUnion("tipo", [
   ajusteSchema
 ]);
 
-export async function createEntrada(prevState: any, formData: FormData) {
+export async function createEntrada(prevState: any, formData: FormData, usuarioId: string = "669ff07e8c3395d96a513f18") {
   const rawItems = formData.get("itens");
   const parsedItems = rawItems ? JSON.parse(rawItems as string) : [];
 
@@ -140,7 +140,7 @@ export async function createEntrada(prevState: any, formData: FormData) {
           cafeteria: data.cafeteria,
           itens: itensComSaldos,
           dataEntrada: new Date(),
-          usuarioId: new ObjectId("669ff07e8c3395d96a513f18")
+          usuarioId: new ObjectId(usuarioId)
         }, { session });
       
         message = "Entrada de nota fiscal registrada com sucesso!";
@@ -213,7 +213,7 @@ export async function createEntrada(prevState: any, formData: FormData) {
           }],
           observacao: "Ajuste de estoque",
           dataEntrada: new Date(),
-          usuarioId: new ObjectId("669ff07e8c3395d96a513f18")
+          usuarioId: new ObjectId(usuarioId)
         }, { session });
       
         message = "Ajuste de estoque registrado com sucesso!";
