@@ -346,14 +346,6 @@ export function ControleVendas() {
           ) : (
             <div className="space-y-4">
               {vendas.map((venda) => {
-                console.log('=== VENDA INDIVIDUAL ===', {
-                  numeroVenda: venda.numeroVenda,
-                  usuario: venda.usuario, // ← VERIFIQUE SE TEM DADOS AQUI
-                  usuarioNome: venda.usuario?.nome, // ← VERIFIQUE SE TEM NOME
-                  colaborador: venda.colaborador, // ← VERIFIQUE SE TEM DADOS AQUI
-                  colaboradorNome: venda.colaborador?.nome // ← VERIFIQUE SE TEM NOME
-                });
-
                 return (
                 <Card key={venda._id} className="p-4">
                   <div className="flex justify-between items-start mb-3">
@@ -369,7 +361,7 @@ export function ControleVendas() {
                         {new Date(venda.dataVenda).toLocaleString('pt-BR')} • {venda.cafeteria}
                       </div>
                        <div className="text-sm text-muted-foreground mt-1">
-                        Vendedor: {venda.usuario?.nome || venda.usuario?.email || 'N/A'}
+                        Vendedor: {venda.usuario?.nome || 'N/A'}
                       </div>
                     </div>
                     <div className="text-right">
@@ -382,7 +374,7 @@ export function ControleVendas() {
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4" />
                         <span className="font-medium">Colaborador:</span>
-                        <span>{venda.colaborador?.nome || venda.colaborador?.email || 'Colaborador'}</span>
+                        <span>{venda.colaborador?.nome || 'Colaborador'}</span>
                       </div>
                     </div>
                   )}

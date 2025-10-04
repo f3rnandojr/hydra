@@ -59,6 +59,7 @@ export type Venda = {
   cafeteria: "cafeteria_1" | "cafeteria_2";
   tipoCliente: "normal" | "colaborador";
   colaboradorId?: string;
+  colaborador?: Collaborator;
   formaPagamento: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar";
   itens: ItemVenda[];
   total: number;
