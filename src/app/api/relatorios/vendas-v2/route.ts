@@ -10,13 +10,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     // Obter parâmetros de filtro
-    const periodo = searchParams.get('periodo') || 'todos';
+    const periodo = searchParams.get('periodo');
     const formaPagamento = searchParams.get('formaPagamento');
     const tipoCliente = searchParams.get('tipoCliente');
     const cafeteria = searchParams.get('cafeteria');
+    const vendaId = searchParams.get('id');
 
     // Construir filtro baseado nos parâmetros
     const filtro: any = {};
+
+    if (vendaId) {
+        if (!ObjectId.isValid(vendaId)) {
+            return NextResponse.json({ message: "ID de venda inválido." }, { status: 400 });
+        }
+        filtro._id = new ObjectId(vendaId);
+    }
 
     // Filtro de período
     if (periodo && periodo !== 'todos') {
@@ -62,7 +70,6 @@ export async function GET(request: NextRequest) {
       {
         $sort: { dataVenda: -1 }
       },
-      // CORREÇÃO: Garantir que os IDs sejam ObjectIds para o lookup
       {
         $addFields: {
           usuarioIdObj: { 
@@ -74,7 +81,7 @@ export async function GET(request: NextRequest) {
           },
           colaboradorIdObj: {
             $cond: {
-              if: { $and: ["$colaboradorId", { $ne: ["$colaboradorId", ""] }] },
+              if: { $and: ["$colaboradorId", { $ne: ["$colaboradorId", null] }, { $ne: ["$colaboradorId", ""] }] },
               then: {
                 $cond: {
                   if: { $eq: [{ $type: "$colaboradorId" }, "objectId"] },
@@ -90,7 +97,7 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: "usuarios",
-          localField: "usuarioIdObj", // ← Usar o ObjectId convertido
+          localField: "usuarioIdObj",
           foreignField: "_id",
           as: "usuario"
         }
@@ -98,7 +105,7 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: "colaboradores",
-          localField: "colaboradorIdObj", // ← Usar o ObjectId convertido  
+          localField: "colaboradorIdObj",
           foreignField: "_id",
           as: "colaborador"
         }
@@ -113,7 +120,7 @@ export async function GET(request: NextRequest) {
         $project: {
           "usuario.senha": 0,
           "colaborador.senha": 0,
-          usuarioIdObj: 0, // ← Remover campos temporários
+          usuarioIdObj: 0,
           colaboradorIdObj: 0
         }
       }
@@ -123,7 +130,6 @@ export async function GET(request: NextRequest) {
       .aggregate(aggregatePipeline)
       .toArray();
 
-    // Converter ObjectIds para strings
     const vendasFormatadas = vendas.map(venda => ({
       ...venda,
       _id: venda._id.toString(),

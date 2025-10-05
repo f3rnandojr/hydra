@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import type { Product, Collaborator } from "@/lib/definitions";
+import type { Product, Collaborator, Venda } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-context';
@@ -34,7 +34,7 @@ interface FinalizarVendaProps {
     precoUnitario: number;
   }>;
   tipoCliente: "normal" | "colaborador";
-  onVendaFinalizada: () => void;
+  onVendaFinalizada: (venda: Venda) => void;
 }
 
 export function FinalizarVenda({ 
@@ -52,16 +52,13 @@ export function FinalizarVenda({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // ✅ NOVO STATE: Forma de pagamento
   const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
 
-  // Buscar colaboradores e cafeteria ativa
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       setError(null);
       try {
-        // Buscar cafeteria ativa
         const cafeteriaRes = await fetch('/api/parametros?chave=CAFETERIA_ATIVA');
         if (!cafeteriaRes.ok) {
           const errorData = await cafeteriaRes.json();
@@ -70,7 +67,6 @@ export function FinalizarVenda({
         const cafeteriaParam = await cafeteriaRes.json();
         setCafeteriaAtiva(cafeteriaParam?.valor || null);
 
-        // Buscar colaboradores se necessário
         if (tipoCliente === 'colaborador') {
           const colabRes = await fetch('/api/colaboradores?status=ativo');
            if (!colabRes.ok) {
@@ -92,7 +88,6 @@ export function FinalizarVenda({
     }
   }, [open, tipoCliente]);
   
-  // ✅ NOVO EFFECT: Definir "apagar" automaticamente para colaborador
   useEffect(() => {
     if (tipoCliente === 'colaborador') {
       setFormaPagamento('apagar');
@@ -101,7 +96,6 @@ export function FinalizarVenda({
     }
   }, [tipoCliente]);
 
-  // Resetar colaborador selecionado quando o tipo de cliente muda
   useEffect(() => {
     if (tipoCliente === 'normal') {
       setColaboradorId('');
@@ -126,7 +120,7 @@ export function FinalizarVenda({
         cafeteria: cafeteriaAtiva,
         tipoCliente,
         colaboradorId: tipoCliente === "colaborador" && colaboradorId ? colaboradorId : undefined,
-        formaPagamento, // ✅ NOVO CAMPO
+        formaPagamento,
         itens: itens.map(item => ({
           produtoId: item.produto._id.toString(),
           nomeProduto: item.produto.nome,
@@ -146,14 +140,15 @@ export function FinalizarVenda({
         body: JSON.stringify(vendaData),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        onVendaFinalizada();
+        onVendaFinalizada(result.venda);
         onOpenChange(false);
-        setColaboradorId(""); // Reset form
-        setFormaPagamento("dinheiro"); // Reset para padrão
+        setColaboradorId("");
+        setFormaPagamento("dinheiro");
       } else {
-        const errorResult = await response.json();
-        throw new Error(errorResult.message || 'Erro desconhecido ao finalizar venda');
+        throw new Error(result.message || 'Erro desconhecido ao finalizar venda');
       }
     } catch (err: any) {
       setError(err.message);
@@ -172,7 +167,6 @@ export function FinalizarVenda({
                               !!error ||
                               (tipoCliente === "colaborador" && !colaboradorId);
 
-  // ✅ FUNÇÃO PARA OBTER ÍCONE DO PAGAMENTO
   const getPaymentIcon = (type: string) => {
     switch (type) {
       case 'dinheiro': return <DollarSign className="h-4 w-4" />;
@@ -184,7 +178,6 @@ export function FinalizarVenda({
     }
   };
 
-  // ✅ FUNÇÃO PARA OBTER LABEL DO PAGAMENTO
   const getPaymentLabel = (type: string) => {
     switch (type) {
       case 'dinheiro': return "Dinheiro";
@@ -219,7 +212,6 @@ export function FinalizarVenda({
         )}
 
         <div className="space-y-6">
-           {/* Cafeteria (somente leitura) */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Cafeteria</Label>
             <div className="p-3 bg-muted rounded-md text-sm font-medium text-muted-foreground">
@@ -227,7 +219,6 @@ export function FinalizarVenda({
             </div>
           </div>
         
-          {/* Tipo de Cliente (Informativo) */}
           <div className="space-y-3">
              <Label>Tipo de Cliente</Label>
              <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${
@@ -249,7 +240,6 @@ export function FinalizarVenda({
             </div>
           </div>
 
-          {/* ✅ NOVO: Forma de Pagamento */}
           <div className="space-y-3">
             <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
             <Select 
@@ -310,7 +300,6 @@ export function FinalizarVenda({
             )}
           </div>
 
-          {/* Seleção de Colaborador (se for venda para colaborador) */}
           {tipoCliente === "colaborador" && (
             <div className="space-y-3">
               <Label htmlFor="colaborador">Colaborador *</Label>
@@ -332,7 +321,6 @@ export function FinalizarVenda({
             </div>
           )}
 
-          {/* Resumo da Venda */}
           <div className="space-y-3">
             <Label>Resumo da Venda</Label>
             <div className="border rounded-lg p-4 space-y-2">
