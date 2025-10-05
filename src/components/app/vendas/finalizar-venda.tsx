@@ -24,6 +24,7 @@ import type { Product, Collaborator, Venda } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-context';
+import { CupomFiscalDialog } from "@/components/app/vendas/cupom-fiscal-dialog";
 
 interface FinalizarVendaProps {
   open: boolean;
@@ -34,7 +35,7 @@ interface FinalizarVendaProps {
     precoUnitario: number;
   }>;
   tipoCliente: "normal" | "colaborador";
-  onVendaFinalizada: (venda: Venda) => void;
+  onVendaFinalizada: () => void;
 }
 
 export function FinalizarVenda({ 
@@ -53,6 +54,10 @@ export function FinalizarVenda({
   const [error, setError] = useState<string | null>(null);
   
   const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
+
+  const [cupomOpen, setCupomOpen] = useState(false);
+  const [vendaCriada, setVendaCriada] = useState<Venda | null>(null);
+
 
   useEffect(() => {
     async function fetchData() {
@@ -143,7 +148,9 @@ export function FinalizarVenda({
       const result = await response.json();
 
       if (response.ok) {
-        onVendaFinalizada(result.venda);
+        setVendaCriada(result.venda);
+        setCupomOpen(true);
+        onVendaFinalizada();
         onOpenChange(false);
         setColaboradorId("");
         setFormaPagamento("dinheiro");
@@ -190,181 +197,191 @@ export function FinalizarVenda({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Finalizar Venda</DialogTitle>
-          <DialogDescription>
-            {tipoCliente === "colaborador"
-              ? "Venda para colaborador - selecione o colaborador"
-              : "Confirme os detalhes da venda antes de finalizar."}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Finalizar Venda</DialogTitle>
+            <DialogDescription>
+              {tipoCliente === "colaborador"
+                ? "Venda para colaborador - selecione o colaborador"
+                : "Confirme os detalhes da venda antes de finalizar."}
+            </DialogDescription>
+          </DialogHeader>
 
-        {error && (
-            <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Erro de Configuração</AlertTitle>
-                <AlertDescription>
-                    {error}
-                </AlertDescription>
-            </Alert>
-        )}
-
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Cafeteria</Label>
-            <div className="p-3 bg-muted rounded-md text-sm font-medium text-muted-foreground">
-              {isLoading ? "Carregando..." : cafeteriaAtiva || "Não configurada"}
-            </div>
-          </div>
-        
-          <div className="space-y-3">
-             <Label>Tipo de Cliente</Label>
-             <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${
-                tipoCliente === "colaborador" 
-                    ? "bg-accent/10 text-accent-foreground border-accent/20" 
-                    : "bg-muted text-muted-foreground border-border"
-                }`}>
-                {tipoCliente === 'colaborador' ? (
-                    <>
-                        <Users className="h-4 w-4" />
-                        <span>Venda para Colaborador</span>
-                    </>
-                ) : (
-                    <>
-                        <User className="h-4 w-4" />
-                        <span>Venda para Cliente Normal</span>
-                    </>
-                )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
-            <Select 
-              value={formaPagamento} 
-              onValueChange={(value: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar") => 
-                setFormaPagamento(value)
-              }
-              disabled={tipoCliente === 'colaborador' || isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    {getPaymentIcon(formaPagamento)}
-                    {getPaymentLabel(formaPagamento)}
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dinheiro">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Dinheiro
-                  </div>
-                </SelectItem>
-                <SelectItem value="cartao_credito">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Cartão de Crédito
-                  </div>
-                </SelectItem>
-                <SelectItem value="cartao_debito">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Cartão de Débito
-                  </div>
-                </SelectItem>
-                <SelectItem value="pix">
-                  <div className="flex items-center gap-2">
-                    <QrCode className="h-4 w-4" />
-                    PIX
-                  </div>
-                </SelectItem>
-                <SelectItem 
-                  value="apagar" 
-                  disabled={tipoCliente !== 'colaborador'}
-                >
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {tipoCliente === 'colaborador' ? "À Pagar" : "Somente para colaboradores"}
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            {tipoCliente === 'colaborador' && (
-              <p className="text-sm text-muted-foreground">
-                Pagamento automaticamente definido como "À Pagar" para colaboradores
-              </p>
-            )}
-          </div>
-
-          {tipoCliente === "colaborador" && (
-            <div className="space-y-3">
-              <Label htmlFor="colaborador">Colaborador *</Label>
-              <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading || !colaboradores.length}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o colaborador" />
-                </SelectTrigger>
-                <SelectContent>
-                  {colaboradores.map((colab) => (
-                    <SelectItem key={colab._id.toString()} value={colab._id.toString()}>
-                      {colab.nome} ({colab.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {colaboradores.length === 0 && !isLoading && (
-                 <p className="text-sm text-destructive">Nenhum colaborador ativo encontrado.</p>
-              )}
-            </div>
+          {error && (
+              <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Erro de Configuração</AlertTitle>
+                  <AlertDescription>
+                      {error}
+                  </AlertDescription>
+              </Alert>
           )}
 
-          <div className="space-y-3">
-            <Label>Resumo da Venda</Label>
-            <div className="border rounded-lg p-4 space-y-2">
-              {itens.map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.produto.nome}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {item.quantidade} × R$ {item.precoUnitario.toFixed(2)}
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Cafeteria</Label>
+              <div className="p-3 bg-muted rounded-md text-sm font-medium text-muted-foreground">
+                {isLoading ? "Carregando..." : cafeteriaAtiva || "Não configurada"}
+              </div>
+            </div>
+          
+            <div className="space-y-3">
+              <Label>Tipo de Cliente</Label>
+              <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border ${
+                  tipoCliente === "colaborador" 
+                      ? "bg-accent/10 text-accent-foreground border-accent/20" 
+                      : "bg-muted text-muted-foreground border-border"
+                  }`}>
+                  {tipoCliente === 'colaborador' ? (
+                      <>
+                          <Users className="h-4 w-4" />
+                          <span>Venda para Colaborador</span>
+                      </>
+                  ) : (
+                      <>
+                          <User className="h-4 w-4" />
+                          <span>Venda para Cliente Normal</span>
+                      </>
+                  )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="forma-pagamento">Forma de Pagamento</Label>
+              <Select 
+                value={formaPagamento} 
+                onValueChange={(value: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar") => 
+                  setFormaPagamento(value)
+                }
+                disabled={tipoCliente === 'colaborador' || isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      {getPaymentIcon(formaPagamento)}
+                      {getPaymentLabel(formaPagamento)}
                     </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dinheiro">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Dinheiro
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cartao_credito">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Cartão de Crédito
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cartao_debito">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      Cartão de Débito
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pix">
+                    <div className="flex items-center gap-2">
+                      <QrCode className="h-4 w-4" />
+                      PIX
+                    </div>
+                  </SelectItem>
+                  <SelectItem 
+                    value="apagar" 
+                    disabled={tipoCliente !== 'colaborador'}
+                  >
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {tipoCliente === 'colaborador' ? "À Pagar" : "Somente para colaboradores"}
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {tipoCliente === 'colaborador' && (
+                <p className="text-sm text-muted-foreground">
+                  Pagamento automaticamente definido como "À Pagar" para colaboradores
+                </p>
+              )}
+            </div>
+
+            {tipoCliente === "colaborador" && (
+              <div className="space-y-3">
+                <Label htmlFor="colaborador">Colaborador *</Label>
+                <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading || !colaboradores.length}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o colaborador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colaboradores.map((colab) => (
+                      <SelectItem key={colab._id.toString()} value={colab._id.toString()}>
+                        {colab.nome} ({colab.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {colaboradores.length === 0 && !isLoading && (
+                  <p className="text-sm text-destructive">Nenhum colaborador ativo encontrado.</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <Label>Resumo da Venda</Label>
+              <div className="border rounded-lg p-4 space-y-2">
+                {itens.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="font-medium">{item.produto.nome}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.quantidade} × R$ {item.precoUnitario.toFixed(2)}
+                      </div>
+                    </div>
+                    <Badge variant="secondary">
+                      R$ {(item.quantidade * item.precoUnitario).toFixed(2)}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">
-                    R$ {(item.quantidade * item.precoUnitario).toFixed(2)}
-                  </Badge>
-                </div>
-              ))}
-              <div className="border-t pt-2 mt-2">
-                <div className="flex justify-between items-center font-bold">
-                  <span>TOTAL</span>
-                  <span>R$ {calcularTotal().toFixed(2)}</span>
+                ))}
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between items-center font-bold">
+                    <span>TOTAL</span>
+                    <span>R$ {calcularTotal().toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleFinalizarVenda}
-            disabled={isFinalizarDisabled}
-            className="gap-2"
-          >
-            <Check className="h-4 w-4" />
-            {isLoading ? "Processando..." : "Finalizar Venda"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleFinalizarVenda}
+              disabled={isFinalizarDisabled}
+              className="gap-2"
+            >
+              <Check className="h-4 w-4" />
+              {isLoading ? "Processando..." : "Finalizar Venda"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {vendaCriada && (
+        <CupomFiscalDialog
+            open={cupomOpen}
+            onOpenChange={setCupomOpen}
+            vendaId={vendaCriada._id}
+        />
+      )}
+    </>
   );
 }

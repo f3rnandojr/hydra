@@ -10,8 +10,6 @@ import { CarrinhoVenda } from "./carrinho-venda";
 import { FinalizarVenda } from "./finalizar-venda";
 import type { Product, Venda } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
-import { CupomFiscalDialog } from "@/components/app/vendas/cupom-fiscal-dialog";
-
 
 export function VendaForm() {
   const { toast } = useToast();
@@ -23,9 +21,6 @@ export function VendaForm() {
   
   const [finalizarOpen, setFinalizarOpen] = useState(false);
   const [tipoCliente, setTipoCliente] = useState<"normal" | "colaborador">("normal");
-
-  const [cupomDialogOpen, setCupomDialogOpen] = useState(false);
-  const [lastVendaId, setLastVendaId] = useState<string | null>(null);
 
   const adicionarItem = (produto: Product) => {
      if (produto.saldo <= 0 && tipoCliente === 'normal') {
@@ -100,15 +95,13 @@ export function VendaForm() {
     );
   };
 
-  const handleVendaFinalizada = (venda: Venda) => {
+  const handleVendaFinalizada = () => {
     setItensVenda([]);
     setTipoCliente("normal"); // Reset para cliente normal
     toast({
         title: "Venda Finalizada!",
         description: "A venda foi registrada com sucesso.",
     });
-    setLastVendaId(venda._id);
-    setCupomDialogOpen(true);
   };
 
   return (
@@ -197,14 +190,6 @@ export function VendaForm() {
         tipoCliente={tipoCliente}
         onVendaFinalizada={handleVendaFinalizada}
       />
-      
-      {lastVendaId && (
-        <CupomFiscalDialog
-            open={cupomDialogOpen}
-            onOpenChange={setCupomDialogOpen}
-            vendaId={lastVendaId}
-        />
-      )}
     </div>
   );
 }
