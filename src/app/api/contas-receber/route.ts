@@ -7,6 +7,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const colaboradorId = searchParams.get('colaboradorId');
+    const ano = searchParams.get('ano');
+    const mes = searchParams.get('mes');
+    const data = searchParams.get('data');
 
     const client = await clientPromise;
     const db = client.db("hydra");
@@ -14,6 +17,27 @@ export async function GET(request: NextRequest) {
     const filtro: any = {};
     if (status && status !== 'todos') filtro.status = status;
     if (colaboradorId) filtro.colaboradorId = new ObjectId(colaboradorId);
+
+    // Lógica de filtro de data
+    if (data) {
+        const dataInicio = new Date(data);
+        const dataFim = new Date(data);
+        dataFim.setDate(dataFim.getDate() + 1);
+        filtro.dataVenda = { $gte: dataInicio, $lt: dataFim };
+    } else if (ano && mes) {
+        const mesNumero = parseInt(mes) - 1;
+        const anoNumero = parseInt(ano);
+        filtro.dataVenda = {
+            $gte: new Date(anoNumero, mesNumero, 1),
+            $lt: new Date(anoNumero, mesNumero + 1, 1),
+        };
+    } else if (ano) {
+        const anoNumero = parseInt(ano);
+        filtro.dataVenda = {
+            $gte: new Date(anoNumero, 0, 1),
+            $lt: new Date(anoNumero + 1, 0, 1),
+        };
+    }
 
     const contas = await db.collection("contas_receber")
       .aggregate([

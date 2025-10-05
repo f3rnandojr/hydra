@@ -3,12 +3,14 @@
 import { useColaboradorAuth } from "@/contexts/colaborador-auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Filter, DollarSign, CheckCircle, Clock } from "lucide-react";
+import { LogOut, Filter, DollarSign, CheckCircle, Clock, Calendar, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ContaReceber } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 
 interface ContaComVenda extends ContaReceber {
@@ -25,31 +27,49 @@ interface ContaComVenda extends ContaReceber {
   };
 }
 
+const anos = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
+const meses = [
+    { value: "1", label: "Janeiro" }, { value: "2", label: "Fevereiro" },
+    { value: "3", label: "Março" }, { value: "4", label: "Abril" },
+    { value: "5", label: "Maio" }, { value: "6", label: "Junho" },
+    { value: "7", label: "Julho" }, { value: "8", label: "Agosto" },
+    { value: "9", label: "Setembro" }, { value: "10", label: "Outubro" },
+    { value: "11", label: "Novembro" }, { value: "12", label: "Dezembro" },
+];
+
+
 export default function PortalPage() {
   const { colaborador, logout, carregando: carregandoAuth } = useColaboradorAuth();
   const { toast } = useToast();
   const [contas, setContas] = useState<ContaComVenda[]>([]);
   const [carregandoContas, setCarregandoContas] = useState(true);
-  const [periodo, setPeriodo] = useState("todos");
+  
+  const [filtros, setFiltros] = useState({
+    ano: "",
+    mes: "",
+    data: ""
+  });
+  
 
   useEffect(() => {
     if (colaborador) {
-      buscarContas(colaborador._id, periodo);
+      buscarContas();
     }
-  }, [colaborador, periodo]);
+  }, [colaborador]);
 
-  const buscarContas = async (colaboradorId: string, periodoFiltro: string) => {
+  const buscarContas = async () => {
+    if (!colaborador) return;
     setCarregandoContas(true);
     try {
         const params = new URLSearchParams({
-            colaboradorId,
-            status: "todos", // Sempre buscar todos os status para o colaborador
+            colaboradorId: colaborador._id,
         });
 
-        if (periodoFiltro !== "todos") {
-            // A API de contas-receber não tem filtro de período,
-            // então filtramos no client-side por enquanto.
-            // O ideal seria adicionar isso na API depois.
+        if (filtros.data) {
+            params.append('data', filtros.data);
+        } else {
+            if (filtros.ano) params.append('ano', filtros.ano);
+            if (filtros.mes) params.append('mes', filtros.mes);
         }
 
       const response = await fetch(`/api/contas-receber?${params}`);
@@ -69,6 +89,20 @@ export default function PortalPage() {
       setCarregandoContas(false);
     }
   };
+  
+  const handleFilterChange = (field: keyof typeof filtros, value: string) => {
+    setFiltros(prev => ({ ...prev, [field]: value }));
+  }
+
+  const limparFiltros = () => {
+    setFiltros({ ano: "", mes: "", data: "" });
+    // Dispara a busca novamente com os filtros limpos
+    if (colaborador) {
+        const params = new URLSearchParams({ colaboradorId: colaborador._id });
+        fetch(`/api/contas-receber?${params}`).then(res => res.json()).then(setContas);
+    }
+  }
+
 
   const totalEmDebito = contas
     .filter(c => c.status === 'em_debito')
@@ -146,15 +180,55 @@ export default function PortalPage() {
           <CardHeader>
             <CardTitle>Histórico de Gastos</CardTitle>
             <CardDescription>
-              Aqui estão todas as suas compras registradas no sistema.
+              Use os filtros abaixo para refinar sua busca de gastos.
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Filtros */}
+             <div className="p-4 mb-6 border rounded-lg bg-muted/50 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="filtro-data">Data Específica</Label>
+                        <Input 
+                            type="date" 
+                            id="filtro-data" 
+                            value={filtros.data} 
+                            onChange={(e) => handleFilterChange('data', e.target.value)}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="filtro-mes">Mês</Label>
+                        <Select value={filtros.mes} onValueChange={(v) => handleFilterChange('mes', v)}>
+                            <SelectTrigger id="filtro-mes"><SelectValue placeholder="Selecione o mês" /></SelectTrigger>
+                            <SelectContent>
+                                {meses.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="filtro-ano">Ano</Label>
+                        <Select value={filtros.ano} onValueChange={(v) => handleFilterChange('ano', v)}>
+                            <SelectTrigger id="filtro-ano"><SelectValue placeholder="Selecione o ano" /></SelectTrigger>
+                            <SelectContent>
+                                {anos.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                 <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={limparFiltros}>Limpar Filtros</Button>
+                    <Button onClick={buscarContas} disabled={carregandoContas}>
+                        <Search className="mr-2 h-4 w-4" />
+                        {carregandoContas ? 'Buscando...' : 'Filtrar'}
+                    </Button>
+                </div>
+             </div>
+
             {carregandoContas ? (
               <div className="text-center py-8">Carregando histórico...</div>
             ) : contas.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Você ainda não possui nenhum gasto registrado.
+                Você não possui nenhum gasto registrado para os filtros selecionados.
               </div>
             ) : (
               <div className="space-y-4">
