@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const filtro: any = {};
     if (status && status !== 'todos') filtro.status = status;
-    if (colaboradorId && colaboradorId !== 'todos') filtro.colaboradorId = new ObjectId(colaboradorId);
+    if (colaboradorId) filtro.colaboradorId = new ObjectId(colaboradorId);
 
     const contas = await db.collection("contas_receber")
       .aggregate([
@@ -22,18 +22,18 @@ export async function GET(request: NextRequest) {
         },
         {
           $lookup: {
-            from: "colaboradores",
-            localField: "colaboradorId",
-            foreignField: "_id",
-            as: "colaborador"
-          }
-        },
-        {
-          $lookup: {
             from: "vendas",
             localField: "vendaId",
             foreignField: "_id",
             as: "venda"
+          }
+        },
+        {
+          $lookup: {
+            from: "colaboradores",
+            localField: "colaboradorId",
+            foreignField: "_id",
+            as: "colaborador"
           }
         },
         {
