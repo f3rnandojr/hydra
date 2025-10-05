@@ -35,7 +35,7 @@ interface FinalizarVendaProps {
     precoUnitario: number;
   }>;
   tipoCliente: "normal" | "colaborador";
-  onVendaFinalizada: () => void;
+  onVendaFinalizada: (venda: Venda) => void;
 }
 
 export function FinalizarVenda({ 
@@ -56,7 +56,7 @@ export function FinalizarVenda({
   const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
 
   const [cupomOpen, setCupomOpen] = useState(false);
-  const [vendaCriada, setVendaCriada] = useState<Venda | null>(null);
+  const [vendaCriadaId, setVendaCriadaId] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -148,9 +148,9 @@ export function FinalizarVenda({
       const result = await response.json();
 
       if (response.ok) {
-        setVendaCriada(result.venda);
+        setVendaCriadaId(result.venda._id);
         setCupomOpen(true);
-        onVendaFinalizada();
+        onVendaFinalizada(result.venda);
         onOpenChange(false);
         setColaboradorId("");
         setFormaPagamento("dinheiro");
@@ -375,11 +375,11 @@ export function FinalizarVenda({
         </DialogContent>
       </Dialog>
 
-      {vendaCriada && (
+      {vendaCriadaId && (
         <CupomFiscalDialog
             open={cupomOpen}
             onOpenChange={setCupomOpen}
-            vendaId={vendaCriada._id}
+            vendaId={vendaCriadaId}
         />
       )}
     </>

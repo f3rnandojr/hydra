@@ -95,12 +95,12 @@ export function VendaForm() {
     );
   };
 
-  const handleVendaFinalizada = () => {
+  const handleVendaFinalizada = (venda: Venda) => {
     setItensVenda([]);
     setTipoCliente("normal"); // Reset para cliente normal
     toast({
         title: "Venda Finalizada!",
-        description: "A venda foi registrada com sucesso.",
+        description: `Venda #${venda.numeroVenda} registrada com sucesso.`,
     });
   };
 
