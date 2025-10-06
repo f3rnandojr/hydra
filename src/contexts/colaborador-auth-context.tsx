@@ -39,6 +39,7 @@ export function ColaboradorAuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   useEffect(() => {
+    // CORREÇÃO: Não redirecionar se já estiver na página de login
     if (!carregando && !colaborador && pathname !== '/portal/login') {
         router.push('/portal/login');
     }
