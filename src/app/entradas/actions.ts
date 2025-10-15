@@ -81,7 +81,7 @@ export async function createEntrada(prevState: any, formData: FormData, usuarioI
             if (!estoqueAtual) {
               const produto = await db.collection("produtos").findOne(
                 { _id: new ObjectId(item.produtoId) },
-                { session }
+                { session, projection: { estoqueMinimo: 1 } }
               );
               
               if (!produto) {
@@ -116,8 +116,7 @@ export async function createEntrada(prevState: any, formData: FormData, usuarioI
             // Atualizar estoque da cafeteria específica
             await db.collection("estoque").updateOne(
               { 
-                produtoId: new ObjectId(item.produtoId),
-                cafeteria: data.cafeteria 
+                _id: estoqueAtual._id 
               },
               { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
               { session }
@@ -159,7 +158,7 @@ export async function createEntrada(prevState: any, formData: FormData, usuarioI
         if (!estoqueAtual) {
           const produto = await db.collection("produtos").findOne(
             { _id: new ObjectId(data.produtoId) },
-            { session }
+            { session, projection: { estoqueMinimo: 1 } }
           );
           
           if (!produto) {
@@ -194,8 +193,7 @@ export async function createEntrada(prevState: any, formData: FormData, usuarioI
         // Atualizar estoque da cafeteria específica
         await db.collection("estoque").updateOne(
           { 
-            produtoId: new ObjectId(data.produtoId),
-            cafeteria: data.cafeteria 
+            _id: estoqueAtual._id
           },
           { $set: { saldo: saldoAtual, dataAtualizacao: new Date() } },
           { session }
