@@ -3,8 +3,6 @@ import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import type { Venda, ItemVenda } from '@/lib/definitions';
-import { getClientIP } from '@/lib/ip-utils';
-import { createOrUpdateSession } from '@/lib/cafeteria-session';
 
 // Schema para validação dos dados da venda
 const itemVendaSchema = z.object({
@@ -117,12 +115,6 @@ export async function POST(request: NextRequest) {
       novaVenda = { ...vendaDoc, _id: result.insertedId.toString() };
       message = "Venda finalizada com sucesso!";
     });
-
-    // 5. Atualizar a sessão da cafeteria (APENAS após a transação ser bem-sucedida)
-    const ip = await getClientIP(); // A chamada é segura aqui no backend da API route
-    if (ip !== 'unknown' && novaVenda) {
-      await createOrUpdateSession(ip, novaVenda.cafeteria, usuarioNome);
-    }
 
     return NextResponse.json({ message, venda: novaVenda }, { status: 201 });
 
