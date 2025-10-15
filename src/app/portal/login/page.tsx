@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useColaboradorAuth } from '@/contexts/colaborador-auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +18,18 @@ export default function ColaboradorLoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (colaborador) {
+      router.push('/portal');
+    }
+  }, [colaborador, router]);
+
   if (colaborador) {
-    router.push('/portal');
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/40">
+        <p>Redirecionando...</p>
+      </div>
+    );
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -34,7 +43,7 @@ export default function ColaboradorLoginPage() {
         title: "Login realizado!",
         description: `Bem-vindo ao portal!`,
       });
-      router.push('/portal');
+      // O useEffect cuidará do redirecionamento
     } else {
       toast({
         title: "Erro no login",
