@@ -26,7 +26,7 @@ const vendaSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const client = await clientPromise;
-  const session = client.startSession();
+  const dbSession = client.startSession();
   const authHeader = request.headers.get('authorization');
   let usuarioId = "68e17d373ca54b8bec863bf0"; // Default admin
   let usuarioNome = "Admin"
@@ -47,9 +47,8 @@ export async function POST(request: NextRequest) {
     const { itens, ...vendaData } = validation.data;
     let message = "";
     let novaVenda: Venda | null = null;
-    const ip = await getClientIP();
-
-    await session.withTransaction(async () => {
+    
+    await dbSession.withTransaction(async (session) => {
       const db = client.db("hydra");
 
       // 1. Verificar estoque de todos os itens
@@ -115,14 +114,15 @@ export async function POST(request: NextRequest) {
         }, { session });
       }
 
-      // 5. Criar ou atualizar a sessão de cafeteria
-      if (ip !== 'unknown') {
-        await createOrUpdateSession(ip, vendaData.cafeteria, usuarioNome);
-      }
-
       novaVenda = { ...vendaDoc, _id: result.insertedId.toString() };
       message = "Venda finalizada com sucesso!";
     });
+
+    // 5. Atualizar a sessão da cafeteria (APENAS após a transação ser bem-sucedida)
+    const ip = await getClientIP(); // A chamada é segura aqui no backend da API route
+    if (ip !== 'unknown' && novaVenda) {
+      await createOrUpdateSession(ip, novaVenda.cafeteria, usuarioNome);
+    }
 
     return NextResponse.json({ message, venda: novaVenda }, { status: 201 });
 
@@ -130,6 +130,6 @@ export async function POST(request: NextRequest) {
     console.error("Erro na transação de venda:", error);
     return NextResponse.json({ message: error.message || "Falha ao registrar a venda." }, { status: 500 });
   } finally {
-    await session.endSession();
+    await dbSession.endSession();
   }
 }
