@@ -146,13 +146,36 @@ export function ContasReceber() {
           formaQuitacao: "dinheiro"
         }),
       });
-
+  
       if (response.ok) {
+        // ✅ ATUALIZAÇÃO OTIMIZADA - Atualiza o estado local imediatamente
+        setContas(prevContas => 
+          prevContas.map(conta => 
+            conta._id === contaId 
+              ? { 
+                  ...conta, 
+                  status: "quitado",
+                  dataQuitacao: new Date().toISOString(),
+                  usuarioQuitacao: usuario ? {
+                    _id: usuario._id,
+                    nome: usuario.nome,
+                    email: usuario.email
+                  } : undefined
+                }
+              : conta
+          )
+        );
+        
         toast({
           title: "Sucesso!",
           description: "Conta quitada com sucesso.",
         });
-        buscarContas(); // Recarregar a lista
+        
+        // ✅ Opcional: Recarrega após um delay para garantir sincronização
+        setTimeout(() => {
+          buscarContas();
+        }, 1000);
+        
       } else {
         throw new Error('Erro ao quitar conta');
       }
