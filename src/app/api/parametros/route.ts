@@ -1,4 +1,5 @@
 
+
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 
@@ -30,6 +31,13 @@ const defaultParameters = [
     descricao: "Dias de funcionamento da cafeteria",
     dataCriacao: new Date(),
     dataAtualizacao: new Date()
+  },
+  {
+    chave: "HABILITAR_ENTRADA_NOTA_FISCAL",
+    valor: "sim",
+    descricao: "Habilita a aba de entrada por nota fiscal na tela de estoque. Valores: 'sim' ou 'nao'.",
+    dataCriacao: new Date(),
+    dataAtualizacao: new Date()
   }
 ];
 
@@ -47,7 +55,15 @@ export async function GET(request: Request) {
       // Busca um parâmetro específico
       resultado = await parametrosCollection.findOne({ chave });
       if (!resultado) {
-        return NextResponse.json({ error: `Parâmetro ${chave} não encontrado.` }, { status: 404 });
+        // Se o parâmetro específico não for encontrado, procura nos padrões
+        const defaultParam = defaultParameters.find(p => p.chave === chave);
+        if (defaultParam) {
+          // Se encontrado nos padrões, insere no banco e retorna
+          await parametrosCollection.insertOne(defaultParam);
+          resultado = defaultParam;
+        } else {
+          return NextResponse.json({ error: `Parâmetro ${chave} não encontrado.` }, { status: 404 });
+        }
       }
     } else {
       // Busca todos os parâmetros

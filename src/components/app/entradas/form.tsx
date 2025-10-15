@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -24,9 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Trash2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Schemas
 const itemSchema = z.object({
@@ -59,9 +61,35 @@ type EntradaFormProps = {
 export function EntradaForm({ onSuccess }: EntradaFormProps) {
   const { toast } = useToast();
   const { usuario } = useAuth();
-  const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("nota_fiscal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cafeteria, setCafeteria] = useState("cafeteria_01");
+
+  const [habilitarNotaFiscal, setHabilitarNotaFiscal] = useState(false);
+  const [carregandoParam, setCarregandoParam] = useState(true);
+  const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("ajuste");
+
+
+  useEffect(() => {
+    async function fetchParam() {
+      try {
+        setCarregandoParam(true);
+        const response = await fetch('/api/parametros?chave=HABILITAR_ENTRADA_NOTA_FISCAL');
+        const param = await response.json();
+        const habilitado = param.valor === 'sim';
+        setHabilitarNotaFiscal(habilitado);
+        // Define a aba ativa com base no parâmetro
+        setActiveTab(habilitado ? "nota_fiscal" : "ajuste");
+      } catch (error) {
+        console.error("Erro ao buscar parâmetro de nota fiscal", error);
+        // Fallback seguro: desabilita se houver erro
+        setHabilitarNotaFiscal(false);
+        setActiveTab("ajuste");
+      } finally {
+        setCarregandoParam(false);
+      }
+    }
+    fetchParam();
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(activeTab === 'nota_fiscal' ? notaFiscalSchema : ajusteSchema),
@@ -129,6 +157,15 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
     }
   };
 
+  if (carregandoParam) {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+        </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -149,95 +186,97 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
           </FormDescription>
         </FormItem>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="nota_fiscal">Nota Fiscal</TabsTrigger>
+          <TabsList className={cn("grid w-full", habilitarNotaFiscal ? "grid-cols-2" : "grid-cols-1")}>
+            {habilitarNotaFiscal && <TabsTrigger value="nota_fiscal">Nota Fiscal</TabsTrigger>}
             <TabsTrigger value="ajuste">Ajuste de Estoque</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="nota_fiscal" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="numeroNotaFiscal"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número da Nota Fiscal</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Ex: 123456" 
-                      {...field} 
-                      value={field.value || ""} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Itens da Nota</h3>
-              <ProductSearch onProductSelect={(product) => append({ produtoId: product._id.toString(), produtoNome: product.nome, quantidade: 1, precoCusto: 0 })} />
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="w-[120px]">Quantidade</TableHead>
-                      <TableHead className="w-[150px]">Preço Custo (R$)</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fields.map((item, index) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{(item as any).produtoNome}</TableCell>
-                        <TableCell>
-                           <FormField
-                              control={form.control}
-                              name={`itens.${index}.quantidade` as any}
-                              render={({ field }) => (
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  {...field}
-                                  value={field.value ?? ""}
-                                />
-                              )}
-                            />
-                        </TableCell>
-                        <TableCell>
-                           <FormField
-                              control={form.control}
-                              name={`itens.${index}.precoCusto` as any}
-                              render={({ field }) => (
-                                <Input 
-                                  type="number" 
-                                  step="0.01" 
-                                  placeholder="0,00"
-                                  {...field}
-                                  value={field.value ?? ""}
-                                />
-                              )}
-                            />
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                     {fields.length === 0 && (
+          {habilitarNotaFiscal && (
+            <TabsContent value="nota_fiscal" className="space-y-4">
+              <FormField
+                control={form.control}
+                name="numeroNotaFiscal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número da Nota Fiscal</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Ex: 123456" 
+                        {...field} 
+                        value={field.value || ""} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Itens da Nota</h3>
+                <ProductSearch onProductSelect={(product) => append({ produtoId: product._id.toString(), produtoNome: product.nome, quantidade: 1, precoCusto: 0 })} />
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          Nenhum item adicionado.
-                        </TableCell>
+                        <TableHead>Produto</TableHead>
+                        <TableHead className="w-[120px]">Quantidade</TableHead>
+                        <TableHead className="w-[150px]">Preço Custo (R$)</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {fields.map((item, index) => (
+                        <TableRow key={item.id}>
+                          <TableCell>{(item as any).produtoNome}</TableCell>
+                          <TableCell>
+                            <FormField
+                                control={form.control}
+                                name={`itens.${index}.quantidade` as any}
+                                render={({ field }) => (
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    {...field}
+                                    value={field.value ?? ""}
+                                  />
+                                )}
+                              />
+                          </TableCell>
+                          <TableCell>
+                            <FormField
+                                control={form.control}
+                                name={`itens.${index}.precoCusto` as any}
+                                render={({ field }) => (
+                                  <Input 
+                                    type="number" 
+                                    step="0.01" 
+                                    placeholder="0,00"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                  />
+                                )}
+                              />
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {fields.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            Nenhum item adicionado.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                {form.formState.errors.itens && <p className="text-sm font-medium text-destructive">{form.formState.errors.itens.message || form.formState.errors.itens.root?.message}</p>}
               </div>
-               {form.formState.errors.itens && <p className="text-sm font-medium text-destructive">{form.formState.errors.itens.message || form.formState.errors.itens.root?.message}</p>}
-            </div>
-          </TabsContent>
+            </TabsContent>
+          )}
 
           <TabsContent value="ajuste" className="space-y-4">
              <FormField
