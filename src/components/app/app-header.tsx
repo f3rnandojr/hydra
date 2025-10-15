@@ -13,9 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useCafeteria } from '@/contexts/cafeteria-context';
+import { TrocarCafeteriaButton } from '@/components/app/cafeteria/trocar-cafeteria-button';
 
 export function AppHeader() {
   const { usuario, logout, carregando } = useAuth();
+  const { cafeteriaAtiva } = useCafeteria();
   const router = useRouter();
 
   useEffect(() => {
@@ -35,7 +38,16 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-end">
+      <div className="container flex h-14 items-center justify-between">
+        <div className="flex items-center gap-4">
+            {cafeteriaAtiva && (
+              <div className="text-sm font-medium border-r pr-4">
+                <span className="text-muted-foreground">Cafeteria Ativa: </span>
+                <span className="font-bold">{cafeteriaAtiva === 'cafeteria_01' ? '01' : '02'}</span>
+              </div>
+            )}
+            <TrocarCafeteriaButton />
+        </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
             Logado como: <strong>{usuario.nome}</strong>

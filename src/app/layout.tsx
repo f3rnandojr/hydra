@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth-context';
+import { CafeteriaProvider } from '@/contexts/cafeteria-context';
+import { ModalSelecaoCafeteria } from '@/components/app/cafeteria/modal-selecao';
 
 export const metadata: Metadata = {
   title: 'Hydra Sales System',
@@ -22,8 +24,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          {children}
-          <Toaster />
+          <CafeteriaProvider>
+            <ModalSelecaoCafeteria />
+            {children}
+            <Toaster />
+          </CafeteriaProvider>
         </AuthProvider>
       </body>
     </html>

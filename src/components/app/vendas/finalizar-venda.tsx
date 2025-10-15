@@ -24,6 +24,7 @@ import type { Product, Collaborator, Venda } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-context';
+import { useCafeteria } from '@/contexts/cafeteria-context';
 import { CupomFiscalDialog } from "@/components/app/vendas/cupom-fiscal-dialog";
 
 interface FinalizarVendaProps {
@@ -47,11 +48,12 @@ export function FinalizarVenda({
 }: FinalizarVendaProps) {
   const { toast } = useToast();
   const { usuario } = useAuth();
+  const { cafeteriaAtiva, abrirModal } = useCafeteria();
+
   const [colaboradorId, setColaboradorId] = useState("");
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
-  const [cafeteriaAtiva, setCafeteriaAtiva] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingParams, setIsLoadingParams] = useState(true);
+  const [isLoadingParams, setIsLoadingParams] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
@@ -62,20 +64,17 @@ export function FinalizarVenda({
 
   useEffect(() => {
     async function fetchData() {
+      if (!open) return;
+
+      if (!cafeteriaAtiva) {
+        abrirModal();
+        onOpenChange(false); // Fecha o modal de finalizar venda
+        return;
+      }
+      
       setIsLoadingParams(true);
       setError(null);
       try {
-        const cafeteriaRes = await fetch('/api/parametros?chave=CAFETERIA_ATIVA');
-        if (!cafeteriaRes.ok) {
-          const errorData = await cafeteriaRes.json();
-          throw new Error(errorData.error || "Não foi possível carregar a configuração da cafeteria.");
-        }
-        const cafeteriaParam = await cafeteriaRes.json();
-        setCafeteriaAtiva(cafeteriaParam?.valor || null);
-        if (!cafeteriaParam?.valor) {
-            throw new Error("A cafeteria ativa não está configurada no sistema. Contate o administrador.");
-        }
-
         if (tipoCliente === 'colaborador') {
           const colabRes = await fetch('/api/colaboradores?status=ativo');
            if (!colabRes.ok) {
@@ -92,10 +91,8 @@ export function FinalizarVenda({
       }
     }
     
-    if (open) {
-      fetchData();
-    }
-  }, [open, tipoCliente]);
+    fetchData();
+  }, [open, tipoCliente, cafeteriaAtiva, abrirModal, onOpenChange]);
   
   useEffect(() => {
     if (tipoCliente === 'colaborador') {
@@ -118,13 +115,14 @@ export function FinalizarVenda({
   };
 
   const handleFinalizarVenda = async () => {
+    if (!cafeteriaAtiva) {
+      abrirModal();
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
-      if (!cafeteriaAtiva) {
-        throw new Error("A cafeteria ativa não está configurada.");
-      }
-
       const vendaData = {
         cafeteria: cafeteriaAtiva,
         tipoCliente,
@@ -231,7 +229,7 @@ export function FinalizarVenda({
               </Alert>
           )}
 
-          {!isLoadingParams && !error && (
+          {!isLoadingParams && !error && cafeteriaAtiva && (
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Cafeteria</Label>
