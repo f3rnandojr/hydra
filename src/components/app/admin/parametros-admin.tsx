@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Save, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { Switch } from "@/components/ui/switch";
 
 interface Parametro {
   _id: string;
@@ -146,13 +148,30 @@ export function ParametrosAdmin() {
                 <div key={parametro._id} className="grid gap-2 border-b pb-4">
                     <Label htmlFor={parametro.chave} className="font-semibold">{parametro.chave}</Label>
                     <p className="text-sm text-muted-foreground">{parametro.descricao}</p>
-                    <Input
-                        id={parametro.chave}
-                        value={valoresEditados[parametro.chave] || ""}
-                        onChange={(e) => handleValorChange(parametro.chave, e.target.value)}
-                        placeholder={`Digite o valor para ${parametro.chave}`}
-                    />
-                    <div className="text-xs text-muted-foreground">
+                    
+                    {parametro.chave === 'HABILITAR_ENTRADA_NOTA_FISCAL' ? (
+                       <div className="flex items-center space-x-2 mt-2">
+                            <Switch
+                                id={parametro.chave}
+                                checked={valoresEditados[parametro.chave] === 'sim'}
+                                onCheckedChange={(checked) => {
+                                    handleValorChange(parametro.chave, checked ? 'sim' : 'nao');
+                                }}
+                            />
+                            <Label htmlFor={parametro.chave}>
+                                {valoresEditados[parametro.chave] === 'sim' ? 'Habilitado' : 'Desabilitado'}
+                            </Label>
+                        </div>
+                    ) : (
+                        <Input
+                            id={parametro.chave}
+                            value={valoresEditados[parametro.chave] || ""}
+                            onChange={(e) => handleValorChange(parametro.chave, e.target.value)}
+                            placeholder={`Digite o valor para ${parametro.chave}`}
+                        />
+                    )}
+
+                    <div className="text-xs text-muted-foreground mt-2">
                         Última atualização: {new Date(parametro.dataAtualizacao).toLocaleString('pt-BR')}
                     </div>
                 </div>
@@ -185,3 +204,4 @@ export function ParametrosAdmin() {
     </Card>
   );
 }
+
