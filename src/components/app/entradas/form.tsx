@@ -58,6 +58,22 @@ type EntradaFormProps = {
   onSuccess: () => void;
 };
 
+// Função para obter valores padrão com base na aba
+function getDefaultValues(tab: "nota_fiscal" | "ajuste") {
+  if (tab === 'nota_fiscal') {
+    return { 
+      tipo: "nota_fiscal" as const, 
+      numeroNotaFiscal: "", 
+      itens: [] 
+    };
+  }
+  return { 
+    tipo: "ajuste" as const, 
+    produtoId: "", 
+    novoSaldo: 0 
+  };
+}
+
 export function EntradaForm({ onSuccess }: EntradaFormProps) {
   const { toast } = useToast();
   const { usuario } = useAuth();
@@ -67,8 +83,9 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
   const [habilitarNotaFiscal, setHabilitarNotaFiscal] = useState(false);
   const [carregandoParam, setCarregandoParam] = useState(true);
   const [activeTab, setActiveTab] = useState<"nota_fiscal" | "ajuste">("ajuste");
+  const [initialLoad, setInitialLoad] = useState(true);
 
-
+  // Busca do parâmetro
   useEffect(() => {
     async function fetchParam() {
       try {
@@ -77,39 +94,33 @@ export function EntradaForm({ onSuccess }: EntradaFormProps) {
         const param = await response.json();
         const habilitado = param.valor === 'sim';
         setHabilitarNotaFiscal(habilitado);
-        // Define a aba ativa com base no parâmetro
-        setActiveTab(habilitado ? "nota_fiscal" : "ajuste");
+        
+        if (initialLoad) {
+          setActiveTab(habilitado ? "nota_fiscal" : "ajuste");
+          setInitialLoad(false);
+        }
       } catch (error) {
         console.error("Erro ao buscar parâmetro de nota fiscal", error);
-        // Fallback seguro: desabilita se houver erro
         setHabilitarNotaFiscal(false);
-        setActiveTab("ajuste");
+        if (initialLoad) {
+          setActiveTab("ajuste");
+          setInitialLoad(false);
+        }
       } finally {
         setCarregandoParam(false);
       }
     }
     fetchParam();
-  }, []);
+  }, [initialLoad]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(activeTab === 'nota_fiscal' ? notaFiscalSchema : ajusteSchema),
-    defaultValues: {
-      tipo: activeTab,
-      numeroNotaFiscal: "",
-      produtoId: "",
-      novoSaldo: 0,
-      itens: [],
-    },
+    defaultValues: getDefaultValues(activeTab),
   });
   
+  // Reseta o formulário quando a aba muda para garantir a validação correta
   React.useEffect(() => {
-    form.reset({
-      tipo: activeTab,
-      numeroNotaFiscal: "",
-      produtoId: "",
-      novoSaldo: 0,
-      itens: [],
-    });
+    form.reset(getDefaultValues(activeTab));
   }, [activeTab, form]);
 
   const { fields, append, remove } = useFieldArray({
