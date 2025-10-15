@@ -233,8 +233,8 @@ export function FinalizarVenda({
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Cafeteria</Label>
-                  <div className="p-3 bg-muted rounded-md text-sm font-medium text-muted-foreground">
-                    {cafeteriaAtiva}
+                  <div className="p-3 bg-muted rounded-md text-sm font-medium">
+                    {cafeteriaAtiva === 'cafeteria_01' ? 'Cafeteria 01' : 'Cafeteria 02'}
                   </div>
                 </div>
               

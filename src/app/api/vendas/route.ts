@@ -3,6 +3,8 @@ import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import type { Venda, ItemVenda } from '@/lib/definitions';
+import { getClientIP } from '@/lib/ip-utils';
+import { createOrUpdateSession } from '@/lib/cafeteria-session';
 
 // Schema para validação dos dados da venda
 const itemVendaSchema = z.object({
@@ -26,12 +28,12 @@ export async function POST(request: NextRequest) {
   const client = await clientPromise;
   const session = client.startSession();
   const authHeader = request.headers.get('authorization');
-  let usuarioId = "68e17d373ca54b8bec863bf0"; // Default corrigido para o admin existente
+  let usuarioId = "68e17d373ca54b8bec863bf0"; // Default admin
+  let usuarioNome = "Admin"
 
   if (authHeader?.startsWith('Bearer ')) {
-    // Em produção, validar token JWT
+    // Em produção, validar token JWT e obter ID e nome
     const token = authHeader.substring(7);
-    // Decodificar token para obter userId (simplificado por enquanto)
   }
 
   try {
@@ -45,6 +47,7 @@ export async function POST(request: NextRequest) {
     const { itens, ...vendaData } = validation.data;
     let message = "";
     let novaVenda: Venda | null = null;
+    const ip = await getClientIP();
 
     await session.withTransaction(async () => {
       const db = client.db("hydra");
@@ -99,7 +102,7 @@ export async function POST(request: NextRequest) {
 
       const result = await db.collection("vendas").insertOne(vendaDoc as any, { session });
       
-      // Criar registro em contas_receber se for venda "À Pagar"
+      // 4. Criar registro em contas_receber se for venda "À Pagar"
       if (vendaData.formaPagamento === 'apagar' && vendaData.colaboradorId) {
         await db.collection("contas_receber").insertOne({
           vendaId: result.insertedId,
@@ -110,6 +113,11 @@ export async function POST(request: NextRequest) {
           dataCriacao: new Date(),
           dataAtualizacao: new Date()
         }, { session });
+      }
+
+      // 5. Criar ou atualizar a sessão de cafeteria
+      if (ip !== 'unknown') {
+        await createOrUpdateSession(ip, vendaData.cafeteria, usuarioNome);
       }
 
       novaVenda = { ...vendaDoc, _id: result.insertedId.toString() };
