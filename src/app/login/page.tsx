@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,9 +18,18 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   // Se já estiver logado, redirecionar para a página inicial
+  useEffect(() => {
+    if (usuario) {
+      router.push('/');
+    }
+  }, [usuario, router]);
+
   if (usuario) {
-    router.push('/');
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/40">
+        <p>Redirecionando...</p>
+      </div>
+    );
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -34,7 +43,7 @@ export default function LoginPage() {
         title: "Login realizado!",
         description: `Bem-vindo de volta!`,
       });
-      router.push('/');
+      // O useEffect cuidará do redirecionamento
     } else {
       toast({
         title: "Erro no login",
