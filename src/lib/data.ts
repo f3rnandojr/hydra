@@ -1,3 +1,4 @@
+
 import clientPromise from './mongodb';
 import { ObjectId, type WithId } from 'mongodb';
 import type { Collaborator, Product, Cafeteria, Usuario } from './definitions';
@@ -98,14 +99,55 @@ export async function deleteCollaborator(id: string): Promise<boolean> {
 }
 
 // Products Functions
-export async function getProducts(): Promise<Product[]> {
+export async function getProducts(cafeteria: string = "cafeteria_01"): Promise<Product[]> {
     const db = await getDb();
-    const products = await db.collection('produtos').find({ ativo: true }).sort({ nome: 1 }).toArray();
+    
+    const products = await db.collection('produtos').aggregate([
+      {
+        $match: { ativo: true }
+      },
+      {
+        $lookup: {
+          from: "estoque",
+          let: { produtoId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$produtoId", "$$produtoId"] },
+                    { $eq: ["$cafeteria", cafeteria] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: "estoqueInfo"
+        }
+      },
+      {
+        $addFields: {
+          saldo: {
+            $ifNull: [{ $arrayElemAt: ["$estoqueInfo.saldo", 0] }, 0]
+          }
+        }
+      },
+      {
+        $sort: { nome: 1 }
+      },
+      {
+        $project: {
+          estoqueInfo: 0 // Remove o campo temporário
+        }
+      }
+    ]).toArray();
+    
     return products.map(p => ({
-        ...p,
-        _id: p._id.toString(),
+      ...p,
+      _id: p._id.toString(),
     })) as unknown as Product[];
 }
+
 
 export async function createProduct(data: Partial<Omit<Product, '_id' | 'dataCriacao' | 'dataAtualizacao' | 'ativo' | 'saldo'>>): Promise<Product> {
     const db = await getDb();
