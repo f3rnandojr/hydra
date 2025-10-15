@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -44,7 +44,7 @@ interface Filtros {
 export function ContasReceber() {
   const { toast } = useToast();
   const { usuario } = useAuth();
-  const [contas, setContas] = useState<ContaReceber[]>([]);
+  const [todasAsContas, setTodasAsContas] = useState<ContaReceber[]>([]);
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
@@ -52,16 +52,19 @@ export function ContasReceber() {
     colaboradorId: "todos"
   });
 
-  // Buscar colaboradores e contas
   useEffect(() => {
     buscarColaboradores();
     buscarContas();
   }, []);
 
-  // Buscar contas quando filtros mudarem
-  useEffect(() => {
-    buscarContas();
-  }, [filtros]);
+  const contasFiltradas = useMemo(() => {
+    return todasAsContas.filter(conta => {
+        const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
+        const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
+        return filtroStatusOk && filtroColaboradorOk;
+    });
+  }, [todasAsContas, filtros]);
+
 
   const buscarColaboradores = async () => {
     try {
@@ -78,19 +81,10 @@ export function ContasReceber() {
   const buscarContas = async () => {
     setCarregando(true);
     try {
-      const params = new URLSearchParams();
-      
-      if (filtros.status !== "todos") {
-        params.append("status", filtros.status);
-      }
-      if (filtros.colaboradorId !== "todos") {
-        params.append("colaboradorId", filtros.colaboradorId);
-      }
-
-      const response = await fetch(`/api/contas-receber?${params}`);
+      const response = await fetch(`/api/contas-receber`);
       if (response.ok) {
         const data = await response.json();
-        setContas(data);
+        setTodasAsContas(data);
       } else {
         throw new Error('Erro ao buscar contas');
       }
@@ -115,19 +109,19 @@ export function ContasReceber() {
 
   const limparFiltros = () => {
     setFiltros({
-      status: "em_debito",
+      status: "todos",
       colaboradorId: "todos"
     });
   };
 
   const calcularTotalEmDebito = () => {
-    return contas
+    return todasAsContas
       .filter(conta => conta.status === "em_debito")
       .reduce((total, conta) => total + conta.valor, 0);
   };
 
   const calcularTotalQuitado = () => {
-    return contas
+    return todasAsContas
       .filter(conta => conta.status === "quitado")
       .reduce((total, conta) => total + conta.valor, 0);
   };
@@ -148,8 +142,7 @@ export function ContasReceber() {
       });
   
       if (response.ok) {
-        // ✅ ATUALIZAÇÃO OTIMIZADA - Atualiza o estado local imediatamente
-        setContas(prevContas => 
+        setTodasAsContas(prevContas => 
           prevContas.map(conta => 
             conta._id === contaId 
               ? { 
@@ -170,11 +163,6 @@ export function ContasReceber() {
           title: "Sucesso!",
           description: "Conta quitada com sucesso.",
         });
-        
-        // ✅ Opcional: Recarrega após um delay para garantir sincronização
-        setTimeout(() => {
-          buscarContas();
-        }, 1000);
         
       } else {
         throw new Error('Erro ao quitar conta');
@@ -258,7 +246,7 @@ export function ContasReceber() {
             </Button>
             <Button onClick={buscarContas} disabled={carregando}>
               <Search className="h-4 w-4 mr-2" />
-              {carregando ? "Buscando..." : "Buscar"}
+              {carregando ? "Buscando..." : "Atualizar"}
             </Button>
           </div>
         </CardContent>
@@ -302,19 +290,19 @@ export function ContasReceber() {
         <CardHeader>
           <CardTitle>Contas a Receber</CardTitle>
           <CardDescription>
-            {contas.length} contas encontradas
+            {contasFiltradas.length} contas encontradas
           </CardDescription>
         </CardHeader>
         <CardContent>
           {carregando ? (
             <div className="text-center py-8">Carregando contas...</div>
-          ) : contas.length === 0 ? (
+          ) : contasFiltradas.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nenhuma conta encontrada com os filtros selecionados
             </div>
           ) : (
             <div className="space-y-4">
-              {contas.map((conta) => (
+              {contasFiltradas.map((conta) => (
                 <Card key={conta._id} className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
