@@ -50,6 +50,7 @@ interface Filtros {
   formaPagamento: string;
   tipoCliente: string;
   cafeteria: string;
+  ordenacao: "horario" | "produto" | "pagamento"; // Nova opção
 }
 
 export function ControleVendasV2() {
@@ -59,18 +60,31 @@ export function ControleVendasV2() {
     periodo: "todos",
     formaPagamento: "todos",
     tipoCliente: "todos",
-    cafeteria: "todos"
+    cafeteria: "todos",
+    ordenacao: "horario" // Padrão: ordenar por horário
   });
 
   const handlePrint = () => {
     // Calcular totais
     const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
     const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
-  
+
+    // Mapeamento de formas de pagamento
+    const getPaymentLabel = (tipo: string) => {
+        const tipos: { [key: string]: string } = {
+        'dinheiro': 'Dinheiro',
+        'cartao_credito': 'Cartão Crédito', 
+        'cartao_debito': 'Cartão Débito',
+        'pix': 'PIX',
+        'apagar': 'À Pagar'
+        };
+        return tipos[tipo] || tipo;
+    };
+
     // Texto dos filtros aplicados
     const getFiltroTexto = (filtro: string, valor: string) => {
-      if (valor === 'todos') return 'Todos';
-      const map: { [key: string]: string } = {
+        if (valor === 'todos') return 'Todos';
+        const map: { [key: string]: string } = {
         'hoje': 'Hoje',
         'semana': 'Esta Semana', 
         'mes': 'Este Mês',
@@ -82,10 +96,44 @@ export function ControleVendasV2() {
         'normal': 'Cliente Normal',
         'colaborador': 'Colaborador',
         'cafeteria_01': 'Cafeteria 01',
-        'cafeteria_02': 'Cafeteria 02'
-      };
-      return map[valor] || valor;
+        'cafeteria_02': 'Cafeteria 02',
+        'horario': 'Horário',
+        'produto': 'Produto', 
+        'pagamento': 'Forma de Pagamento'
+        };
+        return map[valor] || valor;
     };
+
+    // Preparar dados para o relatório
+    const itensRelatorio = vendas.flatMap(venda => 
+        venda.itens.map(item => ({
+        horario: new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit'
+        }),
+        dataCompleta: venda.dataVenda,
+        produto: item.nomeProduto,
+        quantidade: item.quantidade,
+        valorUnitario: item.precoUnitario,
+        totalItem: item.subtotal,
+        formaPagamento: getPaymentLabel(venda.formaPagamento),
+        formaPagamentoOriginal: venda.formaPagamento
+        }))
+    );
+
+    // Aplicar ordenação baseada no filtro
+    switch (filtros.ordenacao) {
+        case 'produto':
+        itensRelatorio.sort((a, b) => a.produto.localeCompare(b.produto));
+        break;
+        case 'pagamento':
+        itensRelatorio.sort((a, b) => a.formaPagamento.localeCompare(b.formaPagamento));
+        break;
+        case 'horario':
+        default:
+        itensRelatorio.sort((a, b) => a.horario.localeCompare(b.horario));
+        break;
+    }
   
     const conteudoImpressao = `
       <!DOCTYPE html>
@@ -96,8 +144,8 @@ export function ControleVendasV2() {
           body { 
             font-family: 'Courier New', monospace; 
             margin: 15px;
-            font-size: 12px;
-            line-height: 1.3;
+            font-size: 11px;
+            line-height: 1.2;
           }
           .header { 
             text-align: center; 
@@ -116,36 +164,45 @@ export function ControleVendasV2() {
             border-collapse: collapse;
           }
           .filtros td {
-            padding: 4px 8px;
+            padding: 3px 6px;
             border: 1px solid #ddd;
+            font-size: 10px;
           }
           .cabecalho-linhas {
             font-weight: bold;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
-            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
           }
           .linha {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
-            padding: 2px 0;
+            margin: 2px 0;
+            padding: 1px 0;
+            border-bottom: 1px dotted #eee;
           }
           .total-geral {
-            margin-top: 15px;
+            margin-top: 10px;
             border-top: 2px solid #000;
-            padding-top: 8px;
+            padding-top: 5px;
             font-weight: bold;
             text-align: center;
           }
           .resumo {
-            margin: 10px 0;
+            margin: 8px 0;
             text-align: center;
             font-weight: bold;
+            font-size: 10px;
+          }
+          .pagamento {
+            font-size: 9px;
+            color: #666;
+            margin-left: 5px;
           }
           @media print {
-            body { margin: 10px; }
+            body { margin: 8px; }
           }
         </style>
       </head>
@@ -156,7 +213,7 @@ export function ControleVendasV2() {
             day: '2-digit', 
             month: '2-digit', 
             year: 'numeric' 
-          })}</p>
+          })} • Ordenado por: ${getFiltroTexto('ordenacao', filtros.ordenacao)}</p>
         </div>
   
         <!-- Filtros Aplicados -->
@@ -165,10 +222,10 @@ export function ControleVendasV2() {
           <table>
             <tr>
               <td><strong>Período:</strong> ${getFiltroTexto('periodo', filtros.periodo)}</td>
-              <td><strong>Forma de Pagamento:</strong> ${getFiltroTexto('formaPagamento', filtros.formaPagamento)}</td>
+              <td><strong>Forma Pagamento:</strong> ${getFiltroTexto('formaPagamento', filtros.formaPagamento)}</td>
             </tr>
             <tr>
-              <td><strong>Tipo de Cliente:</strong> ${getFiltroTexto('tipoCliente', filtros.tipoCliente)}</td>
+              <td><strong>Tipo Cliente:</strong> ${getFiltroTexto('tipoCliente', filtros.tipoCliente)}</td>
               <td><strong>Cafeteria:</strong> ${getFiltroTexto('cafeteria', filtros.cafeteria)}</td>
             </tr>
           </table>
@@ -176,35 +233,25 @@ export function ControleVendasV2() {
   
         <!-- Resumo -->
         <div class="resumo">
-          ${vendas.length} vendas • ${totalItens} itens • Total: R$ ${totalGeral.toFixed(2)}
+          ${vendas.length} VENDAS • ${totalItens} ITENS • TOTAL: R$ ${totalGeral.toFixed(2)}
         </div>
   
         <!-- Cabeçalho Fixo das Colunas -->
         <div class="cabecalho-linhas">
-          HH:MM | Nome do Produto | Qtd x R$ Valor | R$ Total
+          <span>HH:MM | PRODUTO | PAGAMENTO</span>
+          <span>QTD x VALOR | TOTAL</span>
         </div>
   
         <!-- Itens -->
-        ${vendas
-          .flatMap(venda => 
-            venda.itens.map(item => ({
-              horario: new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              produto: item.nomeProduto,
-              quantidade: item.quantidade,
-              valorUnitario: item.precoUnitario,
-              totalItem: item.subtotal
-            }))
-          )
-          .sort((a, b) => a.horario.localeCompare(b.horario))
-          .map(item => `
-            <div class="linha">
-              <span>${item.horario} | ${item.produto}</span>
-              <span>${item.quantidade} x R$ ${item.valorUnitario.toFixed(2)} | R$ ${item.totalItem.toFixed(2)}</span>
-            </div>
-          `).join('')}
+        ${itensRelatorio.map(item => `
+          <div class="linha">
+            <span>
+              ${item.horario} | ${item.produto} 
+              <span class="pagamento">${item.formaPagamento}</span>
+            </span>
+            <span>${item.quantidade} x R$ ${item.valorUnitario.toFixed(2)} | R$ ${item.totalItem.toFixed(2)}</span>
+          </div>
+        `).join('')}
   
         <div class="total-geral">
           TOTAL GERAL: R$ ${totalGeral.toFixed(2)}
@@ -261,7 +308,8 @@ export function ControleVendasV2() {
       periodo: "todos",
       formaPagamento: "todos", 
       tipoCliente: "todos",
-      cafeteria: "todos"
+      cafeteria: "todos",
+      ordenacao: "horario"
     });
   };
 
@@ -331,7 +379,7 @@ export function ControleVendasV2() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Período */}
             <div className="space-y-2">
               <Label>Período</Label>
@@ -404,6 +452,24 @@ export function ControleVendasV2() {
                   <SelectItem value="todos">Todas as cafeterias</SelectItem>
                   <SelectItem value="cafeteria_01">Cafeteria 01</SelectItem>
                   <SelectItem value="cafeteria_02">Cafeteria 02</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Ordenação */}
+            <div className="space-y-2">
+              <Label>Ordenar por</Label>
+              <Select 
+                value={filtros.ordenacao} 
+                onValueChange={(value: Filtros['ordenacao']) => handleFiltroChange('ordenacao', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="horario">Horário</SelectItem>
+                  <SelectItem value="produto">Produto</SelectItem>
+                  <SelectItem value="pagamento">Forma de Pagamento</SelectItem>
                 </SelectContent>
               </Select>
             </div>
