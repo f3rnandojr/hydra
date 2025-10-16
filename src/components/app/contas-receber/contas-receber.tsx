@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock } from "lucide-react";
+import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock, Printer } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import type { ContaReceber as ContaReceberType, Collaborator, Usuario } from "@/lib/definitions";
 
@@ -112,6 +112,7 @@ export function ContasReceber() {
       status: "todos",
       colaboradorId: "todos"
     });
+    buscarContas();
   };
 
   const calcularTotalEmDebito = () => {
@@ -177,6 +178,209 @@ export function ContasReceber() {
     }
   };
 
+  const handlePrintContasReceber = () => {
+    // Calcular totais
+    const totalEmDebito = calcularTotalEmDebito();
+    const totalQuitado = calcularTotalQuitado();
+    const totalContas = todasAsContas.length;
+    const contasEmDebito = todasAsContas.filter(conta => conta.status === "em_debito").length;
+    const contasQuitadas = todasAsContas.filter(conta => conta.status === "quitado").length;
+
+    // Mapeamento de status
+    const getStatusLabel = (status: string) => {
+      return status === "quitado" ? "QUITADO" : "EM DÉBITO";
+    };
+
+    // Mapeamento de formas de quitação
+    const getFormaQuitacaoLabel = (forma?: string) => {
+      if (!forma) return '-';
+      const formas: { [key: string]: string } = {
+        'dinheiro': 'Dinheiro',
+        'cartao_credito': 'Cartão Crédito',
+        'cartao_debito': 'Cartão Débito', 
+        'pix': 'PIX',
+        'transferencia': 'Transferência'
+      };
+      return formas[forma] || forma;
+    };
+
+    const conteudoImpressao = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Relatório de Contas a Receber</title>
+        <style>
+          body { 
+            font-family: 'Courier New', monospace; 
+            margin: 15px;
+            font-size: 11px;
+            line-height: 1.2;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 15px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+          }
+          .filtros {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+          }
+          .filtros table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .filtros td {
+            padding: 3px 6px;
+            border: 1px solid #ddd;
+            font-size: 10px;
+          }
+          .resumo-geral {
+            margin: 10px 0;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+          }
+          .cabecalho-linhas {
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+          }
+          .linha-conta {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+            align-items: center;
+          }
+          .status-debito {
+            color: #d97706;
+            font-weight: bold;
+          }
+          .status-quitado {
+            color: #059669;
+            font-weight: bold;
+          }
+          .total-geral {
+            margin-top: 15px;
+            border-top: 2px solid #000;
+            padding-top: 8px;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+          .data-quitacao {
+            font-size: 9px;
+            color: #666;
+          }
+          @media print {
+            body { margin: 10px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>RELATÓRIO DE CONTAS A RECEBER</h1>
+          <p>${new Date().toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          })}</p>
+        </div>
+
+        <!-- Filtros Aplicados -->
+        <div class="filtros">
+          <strong>FILTROS APLICADOS:</strong>
+          <table>
+            <tr>
+              <td><strong>Status:</strong> ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')}</td>
+              <td><strong>Colaborador:</strong> ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Resumo Geral -->
+        <div class="resumo-geral">
+          ${totalContas} CONTAS • ${contasEmDebito} EM DÉBITO • ${contasQuitadas} QUITADAS<br>
+          TOTAL A RECEBER: R$ ${totalEmDebito.toFixed(2)} • TOTAL RECEBIDO: R$ ${totalQuitado.toFixed(2)}
+        </div>
+
+        <!-- Cabeçalho das Colunas -->
+        <div class="cabecalho-linhas">
+          <span>VENDA | COLABORADOR</span>
+          <span>DATA | STATUS</span>
+          <span>VALOR</span>
+          <span>FORMA/ DATA QUITAÇÃO</span>
+        </div>
+
+        <!-- Lista de Contas -->
+        ${contasFiltradas.map(conta => {
+          const dataVenda = new Date(conta.dataVenda).toLocaleDateString('pt-BR');
+          const dataQuitacao = conta.dataQuitacao 
+            ? new Date(conta.dataQuitacao).toLocaleDateString('pt-BR') 
+            : '-';
+          const formaQuitacao = getFormaQuitacaoLabel(conta.formaQuitacao);
+          
+          return `
+            <div class="linha-conta">
+              <div>
+                <strong>#${conta.venda?.numeroVenda || 'N/A'}</strong><br>
+                <small>${conta.colaborador?.nome || 'N/A'}</small>
+              </div>
+              <div>
+                ${dataVenda}<br>
+                <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">
+                  ${getStatusLabel(conta.status)}
+                </span>
+              </div>
+              <div style="text-align: center;">
+                <strong>R$ ${conta.valor.toFixed(2)}</strong>
+              </div>
+              <div style="text-align: center;">
+                ${conta.status === 'quitado' 
+                  ? `${formaQuitacao}<br><small class="data-quitacao">${dataQuitacao}</small>` 
+                  : '<em>Pendente</em>'
+                }
+              </div>
+            </div>
+          `;
+        }).join('')}
+
+        <!-- Totais -->
+        <div class="total-geral">
+          <div>
+            <strong>TOTAL EM DÉBITO:</strong><br>
+            <span style="color: #d97706; font-size: 14px;">R$ ${totalEmDebito.toFixed(2)}</span>
+          </div>
+          <div>
+            <strong>TOTAL QUITADO:</strong><br>
+            <span style="color: #059669; font-size: 14px;">R$ ${totalQuitado.toFixed(2)}</span>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const janela = window.open('', '_blank');
+    if (janela) {
+      janela.document.write(conteudoImpressao);
+      janela.document.close();
+      janela.print();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -187,6 +391,14 @@ export function ContasReceber() {
             Controle de débitos dos colaboradores
           </p>
         </div>
+        <Button 
+          onClick={handlePrintContasReceber} 
+          variant="outline" 
+          disabled={carregando || todasAsContas.length === 0}
+        >
+          <Printer className="mr-2 h-4 w-4" />
+          Imprimir Relatório
+        </Button>
       </div>
 
       {/* Filtros */}
@@ -381,3 +593,4 @@ export function ContasReceber() {
     </div>
   );
 }
+    
