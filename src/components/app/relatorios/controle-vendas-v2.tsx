@@ -63,37 +63,151 @@ export function ControleVendasV2() {
   });
 
   const handlePrint = () => {
+    // Calcular totais
+    const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
+    const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
+  
+    // Texto dos filtros aplicados
+    const getFiltroTexto = (filtro: string, valor: string) => {
+      if (valor === 'todos') return 'Todos';
+      const map: { [key: string]: string } = {
+        'hoje': 'Hoje',
+        'semana': 'Esta Semana', 
+        'mes': 'Este Mês',
+        'dinheiro': 'Dinheiro',
+        'cartao_credito': 'Cartão Crédito',
+        'cartao_debito': 'Cartão Débito',
+        'pix': 'PIX',
+        'apagar': 'À Pagar',
+        'normal': 'Cliente Normal',
+        'colaborador': 'Colaborador',
+        'cafeteria_01': 'Cafeteria 01',
+        'cafeteria_02': 'Cafeteria 02'
+      };
+      return map[valor] || valor;
+    };
+  
     const conteudoImpressao = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Relatório de Vendas</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .linha { display: flex; justify-content: space-between; margin: 5px 0; padding-bottom: 5px; border-bottom: 1px dashed #ccc; }
-          .total { border-top: 2px solid #000; margin-top: 10px; padding-top: 5px; font-weight: bold; }
-          @media print { body { margin: 10px; } }
+          body { 
+            font-family: 'Courier New', monospace; 
+            margin: 15px;
+            font-size: 12px;
+            line-height: 1.3;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 15px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+          }
+          .filtros {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+          }
+          .filtros table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .filtros td {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+          }
+          .cabecalho-linhas {
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            text-align: center;
+          }
+          .linha {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            padding: 2px 0;
+          }
+          .total-geral {
+            margin-top: 15px;
+            border-top: 2px solid #000;
+            padding-top: 8px;
+            font-weight: bold;
+            text-align: center;
+          }
+          .resumo {
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+          }
+          @media print {
+            body { margin: 10px; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <h2>RELATÓRIO DE VENDAS</h2>
-          <p>${new Date().toLocaleDateString('pt-BR')}</p>
+          <h1>RELATÓRIO DE VENDAS</h1>
+          <p>${new Date().toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          })}</p>
         </div>
-        
-        ${vendas.flatMap(venda => 
-          venda.itens.map(item => `
+  
+        <!-- Filtros Aplicados -->
+        <div class="filtros">
+          <strong>FILTROS APLICADOS:</strong>
+          <table>
+            <tr>
+              <td><strong>Período:</strong> ${getFiltroTexto('periodo', filtros.periodo)}</td>
+              <td><strong>Forma de Pagamento:</strong> ${getFiltroTexto('formaPagamento', filtros.formaPagamento)}</td>
+            </tr>
+            <tr>
+              <td><strong>Tipo de Cliente:</strong> ${getFiltroTexto('tipoCliente', filtros.tipoCliente)}</td>
+              <td><strong>Cafeteria:</strong> ${getFiltroTexto('cafeteria', filtros.cafeteria)}</td>
+            </tr>
+          </table>
+        </div>
+  
+        <!-- Resumo -->
+        <div class="resumo">
+          ${vendas.length} vendas • ${totalItens} itens • Total: R$ ${totalGeral.toFixed(2)}
+        </div>
+  
+        <!-- Cabeçalho Fixo das Colunas -->
+        <div class="cabecalho-linhas">
+          HH:MM | Nome do Produto | Qtd x R$ Valor | R$ Total
+        </div>
+  
+        <!-- Itens -->
+        ${vendas
+          .flatMap(venda => 
+            venda.itens.map(item => ({
+              horario: new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              produto: item.nomeProduto,
+              quantidade: item.quantidade,
+              valorUnitario: item.precoUnitario,
+              totalItem: item.subtotal
+            }))
+          )
+          .sort((a, b) => a.horario.localeCompare(b.horario))
+          .map(item => `
             <div class="linha">
-              <span>${new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} | ${item.nomeProduto}</span>
-              <span>${item.quantidade} x R$ ${item.precoUnitario.toFixed(2)} | R$ ${item.subtotal.toFixed(2)}</span>
+              <span>${item.horario} | ${item.produto}</span>
+              <span>${item.quantidade} x R$ ${item.valorUnitario.toFixed(2)} | R$ ${item.totalItem.toFixed(2)}</span>
             </div>
-          `)
-        ).join('')}
-        
-        <div class="linha total">
-          <span>TOTAL GERAL</span>
-          <span>R$ ${vendas.reduce((total, venda) => total + venda.total, 0).toFixed(2)}</span>
+          `).join('')}
+  
+        <div class="total-geral">
+          TOTAL GERAL: R$ ${totalGeral.toFixed(2)}
         </div>
       </body>
       </html>
