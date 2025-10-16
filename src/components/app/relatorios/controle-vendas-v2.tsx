@@ -65,11 +65,7 @@ export function ControleVendasV2() {
   });
 
   const handlePrint = () => {
-    // Calcular totais
-    const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
-    const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
-
-    // Mapeamento de formas de pagamento
+    // Mapeamento de formas de pagamento (deve vir antes do cálculo)
     const getPaymentLabel = (tipo: string) => {
         const tipos: { [key: string]: string } = {
         'dinheiro': 'Dinheiro',
@@ -80,6 +76,26 @@ export function ControleVendasV2() {
         };
         return tipos[tipo] || tipo;
     };
+    
+    // Calcular totais
+    const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
+    const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
+
+    // Calcular resumo por forma de pagamento
+    const resumoPagamentos = vendas.reduce((acc, venda) => {
+        const forma = venda.formaPagamento;
+        if (!acc[forma]) {
+        acc[forma] = {
+            quantidade: 0,
+            total: 0,
+            label: getPaymentLabel(forma)
+        };
+        }
+        acc[forma].quantidade += 1;
+        acc[forma].total += venda.total;
+        return acc;
+    }, {} as { [key: string]: { quantidade: number; total: number; label: string } });
+
 
     // Texto dos filtros aplicados
     const getFiltroTexto = (filtro: string, valor: string) => {
@@ -168,6 +184,35 @@ export function ControleVendasV2() {
             border: 1px solid #ddd;
             font-size: 10px;
           }
+           .resumo-geral {
+                margin: 8px 0;
+                text-align: center;
+                font-weight: bold;
+                font-size: 10px;
+                padding: 8px;
+                background: #f0f0f0;
+                border-radius: 4px;
+            }
+            .resumo-pagamentos {
+                margin: 10px 0;
+                padding: 8px;
+                border: 1px solid #ccc;
+                background: #f8f8f8;
+                font-size: 10px;
+            }
+            .resumo-pagamentos table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .resumo-pagamentos td {
+                padding: 2px 5px;
+                border-bottom: 1px dotted #ddd;
+            }
+            .resumo-pagamentos .total-linha {
+                font-weight: bold;
+                border-top: 1px solid #000;
+                border-bottom: none;
+            }
           .cabecalho-linhas {
             font-weight: bold;
             border-bottom: 1px solid #000;
@@ -189,12 +234,6 @@ export function ControleVendasV2() {
             padding-top: 5px;
             font-weight: bold;
             text-align: center;
-          }
-          .resumo {
-            margin: 8px 0;
-            text-align: center;
-            font-weight: bold;
-            font-size: 10px;
           }
           .pagamento {
             font-size: 9px;
@@ -231,9 +270,28 @@ export function ControleVendasV2() {
           </table>
         </div>
   
-        <!-- Resumo -->
-        <div class="resumo">
-          ${vendas.length} VENDAS • ${totalItens} ITENS • TOTAL: R$ ${totalGeral.toFixed(2)}
+        <!-- Resumo Geral -->
+        <div class="resumo-geral">
+            ${vendas.length} VENDAS • ${totalItens} ITENS • TOTAL: R$ ${totalGeral.toFixed(2)}
+        </div>
+
+        <!-- Resumo por Forma de Pagamento -->
+        <div class="resumo-pagamentos">
+            <strong>RESUMO POR FORMA DE PAGAMENTO:</strong>
+            <table>
+                ${Object.entries(resumoPagamentos).map(([forma, dados]) => `
+                    <tr>
+                    <td>${dados.label}:</td>
+                    <td>${dados.quantidade} vendas</td>
+                    <td>R$ ${dados.total.toFixed(2)}</td>
+                    </tr>
+                `).join('')}
+                <tr class="total-linha">
+                    <td><strong>TOTAL:</strong></td>
+                    <td><strong>${vendas.length} vendas</strong></td>
+                    <td><strong>R$ ${totalGeral.toFixed(2)}</strong></td>
+                </tr>
+            </table>
         </div>
   
         <!-- Cabeçalho Fixo das Colunas -->
@@ -593,5 +651,3 @@ export function ControleVendasV2() {
     </div>
   );
 }
-
-    
