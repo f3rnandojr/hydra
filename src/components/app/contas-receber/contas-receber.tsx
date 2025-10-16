@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock, Printer } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import type { ContaReceber as ContaReceberType, Collaborator, Usuario } from "@/lib/definitions";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 interface ContaReceber extends ContaReceberType {
@@ -47,6 +48,7 @@ export function ContasReceber() {
   const [todasAsContas, setTodasAsContas] = useState<ContaReceber[]>([]);
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [quitandoTodas, setQuitandoTodas] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
     status: "todos",
     colaboradorId: "todos"
@@ -175,6 +177,81 @@ export function ContasReceber() {
         description: "Não foi possível quitar a conta.",
         variant: "destructive",
       });
+    }
+  };
+
+  const quitarTodasContas = async () => {
+    if (!usuario) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const contasEmDebito = contasFiltradas.filter(conta => conta.status === "em_debito");
+    
+    if (contasEmDebito.length === 0) {
+      toast({
+        title: "Aviso",
+        description: "Não há contas em débito para quitar.",
+        variant: "default",
+      });
+      return;
+    }
+
+    setQuitandoTodas(true);
+
+    try {
+      const response = await fetch('/api/contas-receber/batch-quit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${usuario._id}`,
+        },
+        body: JSON.stringify({
+          contaIds: contasEmDebito.map(conta => conta._id),
+          formaQuitacao: "dinheiro"
+        }),
+      });
+
+      if (response.ok) {
+        setTodasAsContas(prevContas => 
+          prevContas.map(conta => 
+            contasEmDebito.some(debito => debito._id === conta._id)
+              ? { 
+                  ...conta, 
+                  status: "quitado",
+                  dataQuitacao: new Date().toISOString(),
+                  formaQuitacao: "dinheiro",
+                  usuarioQuitacao: {
+                    _id: usuario._id,
+                    nome: usuario.nome,
+                    email: usuario.email
+                  }
+                }
+              : conta
+          )
+        );
+
+        toast({
+          title: "Sucesso!",
+          description: `${contasEmDebito.length} contas quitadas com sucesso.`,
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao quitar contas');
+      }
+    } catch (error: any) {
+      console.error('Erro:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível quitar as contas.",
+        variant: "destructive",
+      });
+    } finally {
+      setQuitandoTodas(false);
     }
   };
 
@@ -360,14 +437,55 @@ export function ContasReceber() {
             Controle de débitos dos colaboradores
           </p>
         </div>
-        <Button 
-          onClick={handlePrintContasReceber} 
-          variant="outline" 
-          disabled={carregando || todasAsContas.length === 0}
-        >
-          <Printer className="mr-2 h-4 w-4" />
-          Imprimir Relatório
-        </Button>
+        <div className="flex gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  disabled={carregando || quitandoTodas || contasFiltradas.filter(conta => conta.status === "em_debito").length === 0}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Marcar Todos como Pago
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar Quitação em Lote</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja marcar TODAS as {contasFiltradas.filter(conta => conta.status === "em_debito").length} contas em débito como pagas?
+                    <br /><br />
+                    <strong>Esta ação não pode ser desfeita.</strong>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={quitandoTodas}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={quitarTodasContas}
+                    disabled={quitandoTodas}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {quitandoTodas ? (
+                      <>
+                        <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Quitando...
+                      </>
+                    ) : (
+                      'Sim, Quitar Todas'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button 
+              onClick={handlePrintContasReceber} 
+              variant="outline" 
+              disabled={carregando || todasAsContas.length === 0}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir Relatório
+            </Button>
+          </div>
       </div>
 
       {/* Filtros */}
