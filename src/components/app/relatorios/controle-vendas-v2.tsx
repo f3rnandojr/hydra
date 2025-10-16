@@ -115,7 +115,17 @@ export function ControleVendasV2() {
   };
 
   const formatarData = (dataString: string) => {
-    return new Date(dataString).toLocaleString('pt-BR');
+    const data = new Date(dataString);
+    // Força formato consistente entre servidor e cliente
+    return data.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   const getPaymentLabel = (tipo: string) => {
