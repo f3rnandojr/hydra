@@ -48,7 +48,7 @@ export function ContasReceber() {
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
-    status: "em_debito",
+    status: "todos",
     colaboradorId: "todos"
   });
 
@@ -222,6 +222,7 @@ export function ContasReceber() {
             padding: 8px;
             border: 1px solid #ccc;
             background: #f9f9f9;
+            text-align: center;
           }
           .resumo-geral {
             margin: 8px 0;
@@ -235,16 +236,20 @@ export function ContasReceber() {
             border-bottom: 1px solid #000;
             padding-bottom: 3px;
             margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 80px 120px 70px 70px 60px 80px 80px;
+            gap: 5px;
+            text-align: center;
           }
           .linha-conta {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 80px 120px 70px 70px 60px 80px 80px;
+            gap: 5px;
             margin: 2px 0;
             padding: 2px 0;
             border-bottom: 1px dotted #ddd;
             align-items: center;
+            text-align: center;
           }
           .status-debito {
             color: #d97706;
@@ -261,6 +266,12 @@ export function ContasReceber() {
             font-weight: bold;
             display: flex;
             justify-content: space-between;
+          }
+          .col-venda {
+            font-weight: bold;
+          }
+          .col-valor {
+            font-weight: bold;
           }
           @media print {
             body { margin: 8px; }
@@ -288,10 +299,16 @@ export function ContasReceber() {
   
         <!-- Cabeçalho das Colunas -->
         <div class="cabecalho-linhas">
-          <span>VENDA | COLABORADOR | DATA | STATUS | VALOR | QUITAÇÃO</span>
+          <span>VENDA</span>
+          <span>COLABORADOR</span>
+          <span>DATA</span>
+          <span>STATUS</span>
+          <span>VALOR</span>
+          <span>QUITAÇÃO</span>
+          <span>DATA</span>
         </div>
   
-        <!-- Lista de Contas - UMA LINHA POR CONTA -->
+        <!-- Lista de Contas - GRID ORGANIZADO -->
         ${contasFiltradas.map(conta => {
           const dataVenda = new Date(conta.dataVenda).toLocaleDateString('pt-BR');
           const dataQuitacao = conta.dataQuitacao 
@@ -302,16 +319,15 @@ export function ContasReceber() {
           
           return `
             <div class="linha-conta">
-              <span>
-                #${conta.venda?.numeroVenda || 'N/A'} | 
-                ${conta.colaborador?.nome || 'N/A'} | 
-                ${dataVenda} | 
-                <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">
-                  ${status}
-                </span> | 
-                R$ ${conta.valor.toFixed(2)} | 
-                ${conta.status === 'quitado' ? `${formaQuitacao} ${dataQuitacao}` : 'PENDENTE'}
+              <span class="col-venda">#${conta.venda?.numeroVenda || 'N/A'}</span>
+              <span>${conta.colaborador?.nome || 'N/A'}</span>
+              <span>${dataVenda}</span>
+              <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">
+                ${status}
               </span>
+              <span class="col-valor">R$ ${conta.valor.toFixed(2)}</span>
+              <span>${conta.status === 'quitado' ? formaQuitacao : '-'}</span>
+              <span>${conta.status === 'quitado' ? dataQuitacao : '-'}</span>
             </div>
           `;
         }).join('')}
