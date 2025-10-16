@@ -50,7 +50,12 @@ interface Filtros {
   formaPagamento: string;
   tipoCliente: string;
   cafeteria: string;
-  ordenacao: "horario" | "produto" | "pagamento"; // Nova opção
+  ordenacao: "horario" | "produto" | "pagamento";
+}
+
+interface OpcoesRelatorio {
+  mostrarQuantidadeItens: boolean;
+  mostrarResumoPagamentos: boolean;
 }
 
 export function ControleVendasV2() {
@@ -61,11 +66,16 @@ export function ControleVendasV2() {
     formaPagamento: "todos",
     tipoCliente: "todos",
     cafeteria: "todos",
-    ordenacao: "horario" // Padrão: ordenar por horário
+    ordenacao: "horario" 
+  });
+  const [opcoesRelatorio, setOpcoesRelatorio] = useState<OpcoesRelatorio>({
+    mostrarQuantidadeItens: true,
+    mostrarResumoPagamentos: true
   });
 
+
   const handlePrint = () => {
-    // Mapeamento de formas de pagamento (deve vir antes do cálculo)
+      // Mapeamento de formas de pagamento (deve vir antes do cálculo)
     const getPaymentLabel = (tipo: string) => {
         const tipos: { [key: string]: string } = {
         'dinheiro': 'Dinheiro',
@@ -81,21 +91,33 @@ export function ControleVendasV2() {
     const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
     const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
 
-    // Calcular resumo por forma de pagamento
-    const resumoPagamentos = vendas.reduce((acc, venda) => {
-        const forma = venda.formaPagamento;
-        if (!acc[forma]) {
-        acc[forma] = {
-            quantidade: 0,
-            total: 0,
-            label: getPaymentLabel(forma)
-        };
-        }
-        acc[forma].quantidade += 1;
-        acc[forma].total += venda.total;
-        return acc;
-    }, {} as { [key: string]: { quantidade: number; total: number; label: string } });
+    // Calcular resumo por forma de pagamento (SE a opção estiver ativa)
+    const resumoPagamentos = opcoesRelatorio.mostrarResumoPagamentos 
+      ? vendas.reduce((acc, venda) => {
+          const forma = venda.formaPagamento;
+          if (!acc[forma]) {
+            acc[forma] = {
+              quantidade: 0,
+              total: 0,
+              label: getPaymentLabel(forma)
+            };
+          }
+          acc[forma].quantidade += 1;
+          acc[forma].total += venda.total;
+          return acc;
+        }, {} as { [key: string]: { quantidade: number; total: number; label: string } })
+      : {};
 
+    // Calcular quantidade por produto (SE a opção estiver ativa)
+    const quantidadePorProduto = opcoesRelatorio.mostrarQuantidadeItens 
+      ? vendas.flatMap(v => v.itens).reduce((acc, item) => {
+          if (!acc[item.nomeProduto]) {
+            acc[item.nomeProduto] = 0;
+          }
+          acc[item.nomeProduto] += item.quantidade;
+          return acc;
+        }, {} as { [key: string]: number })
+      : {};
 
     // Texto dos filtros aplicados
     const getFiltroTexto = (filtro: string, valor: string) => {
@@ -150,6 +172,13 @@ export function ControleVendasV2() {
         itensRelatorio.sort((a, b) => a.horario.localeCompare(b.horario));
         break;
     }
+
+      // Texto do resumo geral (adaptável conforme opções)
+    const textoResumoGeral = [
+      `${vendas.length} VENDAS`,
+      opcoesRelatorio.mostrarQuantidadeItens && `${totalItens} ITENS`,
+      `TOTAL: R$ ${totalGeral.toFixed(2)}`
+    ].filter(Boolean).join(' • ');
   
     const conteudoImpressao = `
       <!DOCTYPE html>
@@ -193,18 +222,18 @@ export function ControleVendasV2() {
                 background: #f0f0f0;
                 border-radius: 4px;
             }
-            .resumo-pagamentos {
+            .resumo-produtos, .resumo-pagamentos {
                 margin: 10px 0;
                 padding: 8px;
                 border: 1px solid #ccc;
                 background: #f8f8f8;
                 font-size: 10px;
             }
-            .resumo-pagamentos table {
+            .resumo-produtos table, .resumo-pagamentos table {
                 width: 100%;
                 border-collapse: collapse;
             }
-            .resumo-pagamentos td {
+            .resumo-produtos td, .resumo-pagamentos td {
                 padding: 2px 5px;
                 border-bottom: 1px dotted #ddd;
             }
@@ -272,27 +301,44 @@ export function ControleVendasV2() {
   
         <!-- Resumo Geral -->
         <div class="resumo-geral">
-            ${vendas.length} VENDAS • ${totalItens} ITENS • TOTAL: R$ ${totalGeral.toFixed(2)}
+            ${textoResumoGeral}
         </div>
 
-        <!-- Resumo por Forma de Pagamento -->
-        <div class="resumo-pagamentos">
-            <strong>RESUMO POR FORMA DE PAGAMENTO:</strong>
+        <!-- Resumo por Produto (SE ATIVADO) -->
+        ${opcoesRelatorio.mostrarQuantidadeItens && Object.keys(quantidadePorProduto).length > 0 ? `
+          <div class="resumo-produtos">
+            <strong>QUANTIDADE POR PRODUTO:</strong>
             <table>
-                ${Object.entries(resumoPagamentos).map(([forma, dados]) => `
-                    <tr>
-                    <td>${dados.label}:</td>
-                    <td>${dados.quantidade} vendas</td>
-                    <td>R$ ${dados.total.toFixed(2)}</td>
-                    </tr>
-                `).join('')}
-                <tr class="total-linha">
-                    <td><strong>TOTAL:</strong></td>
-                    <td><strong>${vendas.length} vendas</strong></td>
-                    <td><strong>R$ ${totalGeral.toFixed(2)}</strong></td>
+              ${Object.entries(quantidadePorProduto).map(([produto, quantidade]) => `
+                <tr>
+                  <td>${produto}:</td>
+                  <td>${quantidade} unidades</td>
                 </tr>
+              `).join('')}
             </table>
-        </div>
+          </div>
+        ` : ''}
+
+        <!-- Resumo por Forma de Pagamento (SE ATIVADO) -->
+        ${opcoesRelatorio.mostrarResumoPagamentos && Object.keys(resumoPagamentos).length > 0 ? `
+          <div class="resumo-pagamentos">
+              <strong>RESUMO POR FORMA DE PAGAMENTO:</strong>
+              <table>
+                  ${Object.entries(resumoPagamentos).map(([forma, dados]) => `
+                      <tr>
+                      <td>${dados.label}:</td>
+                      <td>${dados.quantidade} vendas</td>
+                      <td>R$ ${dados.total.toFixed(2)}</td>
+                      </tr>
+                  `).join('')}
+                  <tr class="total-linha">
+                      <td><strong>TOTAL:</strong></td>
+                      <td><strong>${vendas.length} vendas</strong></td>
+                      <td><strong>R$ ${totalGeral.toFixed(2)}</strong></td>
+                  </tr>
+              </table>
+          </div>
+        ` : ''}
   
         <!-- Cabeçalho Fixo das Colunas -->
         <div class="cabecalho-linhas">
@@ -532,6 +578,52 @@ export function ControleVendasV2() {
               </Select>
             </div>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 border rounded-lg bg-muted/50">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Opções do Relatório</Label>
+              
+              {/* Checkbox para Quantidade de Itens */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="mostrarQuantidadeItens"
+                  checked={opcoesRelatorio.mostrarQuantidadeItens}
+                  onChange={(e) => setOpcoesRelatorio(prev => ({
+                    ...prev,
+                    mostrarQuantidadeItens: e.target.checked
+                  }))}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="mostrarQuantidadeItens" className="text-sm">
+                  Mostrar quantidade total de itens
+                </Label>
+              </div>
+
+              {/* Checkbox para Resumo de Pagamentos */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="mostrarResumoPagamentos"
+                  checked={opcoesRelatorio.mostrarResumoPagamentos}
+                  onChange={(e) => setOpcoesRelatorio(prev => ({
+                    ...prev,
+                    mostrarResumoPagamentos: e.target.checked
+                  }))}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="mostrarResumoPagamentos" className="text-sm">
+                  Mostrar resumo por forma de pagamento
+                </Label>
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              <p>💡 <strong>Para o setor financeiro:</strong> marque "Resumo por forma de pagamento"</p>
+              <p>💡 <strong>Para a cafeteria:</strong> marque "Quantidade total de itens"</p>
+            </div>
+          </div>
+
 
           {/* Botões de Ação */}
           <div className="flex justify-end gap-2 mt-4">
@@ -651,3 +743,5 @@ export function ControleVendasV2() {
     </div>
   );
 }
+
+    
