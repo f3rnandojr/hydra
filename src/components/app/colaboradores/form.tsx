@@ -24,6 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 const collaboratorSchema = z.object({
   nome: z.string().min(3, { message: "Nome deve ter no mínimo 3 caracteres." }),
   email: z.string().email({ message: "Por favor, insira um email válido." }),
+  setor: z.string().optional(),
+  matricula: z.string().optional(),
   status: z.boolean().default(true),
 });
 
@@ -51,6 +53,8 @@ export function CollaboratorForm({ collaborator, action, onSuccess }: Collaborat
     defaultValues: {
       nome: collaborator?.nome || "",
       email: collaborator?.email || "",
+      setor: collaborator?.setor || "",
+      matricula: collaborator?.matricula || "",
       senha: "",
       status: collaborator?.status ?? true,
     },
@@ -102,6 +106,34 @@ export function CollaboratorForm({ collaborator, action, onSuccess }: Collaborat
             </FormItem>
           )}
         />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="setor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Setor</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Vendas" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="matricula"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Matrícula</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 12345" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="senha"

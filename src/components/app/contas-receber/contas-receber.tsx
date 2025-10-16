@@ -18,6 +18,8 @@ interface ContaReceber extends ContaReceberType {
     _id: string;
     nome: string;
     email: string;
+    matricula?: string;
+    setor?: string;
   };
   venda: {
     _id: string;
@@ -622,11 +624,16 @@ export function ContasReceber() {
 
                   {/* Informações do Colaborador */}
                   <div className="bg-muted p-3 rounded-md mb-3">
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
                       <User className="h-4 w-4" />
                       <span className="font-medium">Colaborador:</span>
                       <span>{conta.colaborador?.nome}</span>
-                      <span className="text-muted-foreground">({conta.colaborador?.email})</span>
+                      {conta.colaborador?.matricula && (
+                        <span className="text-muted-foreground">(Mat: {conta.colaborador.matricula})</span>
+                      )}
+                      {conta.colaborador?.setor && (
+                        <span className="text-muted-foreground">- {conta.colaborador.setor}</span>
+                      )}
                     </div>
                   </div>
 
@@ -680,4 +687,3 @@ export function ContasReceber() {
     </div>
   );
 }
-    

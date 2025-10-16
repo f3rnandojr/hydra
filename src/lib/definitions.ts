@@ -5,10 +5,12 @@ export type Collaborator = {
   nome: string;
   email: string;
   senha?: string;
+  setor?: string; // Novo campo
+  matricula?: string; // Novo campo
   status: boolean; // true=ativo, false=inativo
   dataCriacao: Date;
   dataAtualizacao: Date;
-  deletedAt: Date | null;
+  deletedAt?: Date | null;
 };
 
 export type Product = {
