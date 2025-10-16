@@ -182,15 +182,10 @@ export function ContasReceber() {
     // Calcular totais
     const totalEmDebito = calcularTotalEmDebito();
     const totalQuitado = calcularTotalQuitado();
-    const totalContas = todasAsContas.length;
-    const contasEmDebito = todasAsContas.filter(conta => conta.status === "em_debito").length;
-    const contasQuitadas = todasAsContas.filter(conta => conta.status === "quitado").length;
-
-    // Mapeamento de status
-    const getStatusLabel = (status: string) => {
-      return status === "quitado" ? "QUITADO" : "EM DÉBITO";
-    };
-
+    const totalContas = contasFiltradas.length;
+    const contasEmDebito = contasFiltradas.filter(conta => conta.status === "em_debito").length;
+    const contasQuitadas = contasFiltradas.filter(conta => conta.status === "quitado").length;
+  
     // Mapeamento de formas de quitação
     const getFormaQuitacaoLabel = (forma?: string) => {
       if (!forma) return '-';
@@ -203,7 +198,7 @@ export function ContasReceber() {
       };
       return formas[forma] || forma;
     };
-
+  
     const conteudoImpressao = `
       <!DOCTYPE html>
       <html>
@@ -213,54 +208,41 @@ export function ContasReceber() {
           body { 
             font-family: 'Courier New', monospace; 
             margin: 15px;
-            font-size: 11px;
-            line-height: 1.2;
+            font-size: 10px;
+            line-height: 1.1;
           }
           .header { 
             text-align: center; 
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #000;
-            padding-bottom: 10px;
+            padding-bottom: 5px;
           }
           .filtros {
-            margin-bottom: 15px;
-            padding: 10px;
+            margin-bottom: 10px;
+            padding: 8px;
             border: 1px solid #ccc;
             background: #f9f9f9;
           }
-          .filtros table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          .filtros td {
-            padding: 3px 6px;
-            border: 1px solid #ddd;
-            font-size: 10px;
-          }
           .resumo-geral {
-            margin: 10px 0;
-            padding: 8px;
+            margin: 8px 0;
+            padding: 6px;
             background: #f0f0f0;
-            border-radius: 4px;
             text-align: center;
             font-weight: bold;
           }
           .cabecalho-linhas {
             font-weight: bold;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 8px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
-            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
           }
           .linha-conta {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
-            margin: 5px 0;
-            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+            padding: 2px 0;
             border-bottom: 1px dotted #ddd;
             align-items: center;
           }
@@ -273,106 +255,76 @@ export function ContasReceber() {
             font-weight: bold;
           }
           .total-geral {
-            margin-top: 15px;
+            margin-top: 10px;
             border-top: 2px solid #000;
-            padding-top: 8px;
+            padding-top: 5px;
             font-weight: bold;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-          }
-          .data-quitacao {
-            font-size: 9px;
-            color: #666;
+            display: flex;
+            justify-content: space-between;
           }
           @media print {
-            body { margin: 10px; }
+            body { margin: 8px; }
           }
         </style>
       </head>
       <body>
         <div class="header">
           <h1>RELATÓRIO DE CONTAS A RECEBER</h1>
-          <p>${new Date().toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-          })}</p>
+          <p>${new Date().toLocaleDateString('pt-BR')}</p>
         </div>
-
+  
         <!-- Filtros Aplicados -->
         <div class="filtros">
-          <strong>FILTROS APLICADOS:</strong>
-          <table>
-            <tr>
-              <td><strong>Status:</strong> ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')}</td>
-              <td><strong>Colaborador:</strong> ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'}</td>
-            </tr>
-          </table>
+          <strong>FILTROS:</strong> 
+          Status: ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')} | 
+          Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'}
         </div>
-
+  
         <!-- Resumo Geral -->
         <div class="resumo-geral">
-          ${totalContas} CONTAS • ${contasEmDebito} EM DÉBITO • ${contasQuitadas} QUITADAS<br>
-          TOTAL A RECEBER: R$ ${totalEmDebito.toFixed(2)} • TOTAL RECEBIDO: R$ ${totalQuitado.toFixed(2)}
+          ${totalContas} CONTAS | ${contasEmDebito} EM DÉBITO | ${contasQuitadas} QUITADAS | 
+          A RECEBER: R$ ${totalEmDebito.toFixed(2)} | RECEBIDO: R$ ${totalQuitado.toFixed(2)}
         </div>
-
+  
         <!-- Cabeçalho das Colunas -->
         <div class="cabecalho-linhas">
-          <span>VENDA | COLABORADOR</span>
-          <span>DATA | STATUS</span>
-          <span>VALOR</span>
-          <span>FORMA/ DATA QUITAÇÃO</span>
+          <span>VENDA | COLABORADOR | DATA | STATUS | VALOR | QUITAÇÃO</span>
         </div>
-
-        <!-- Lista de Contas -->
+  
+        <!-- Lista de Contas - UMA LINHA POR CONTA -->
         ${contasFiltradas.map(conta => {
           const dataVenda = new Date(conta.dataVenda).toLocaleDateString('pt-BR');
           const dataQuitacao = conta.dataQuitacao 
             ? new Date(conta.dataQuitacao).toLocaleDateString('pt-BR') 
             : '-';
           const formaQuitacao = getFormaQuitacaoLabel(conta.formaQuitacao);
+          const status = conta.status === 'quitado' ? 'QUITADO' : 'EM DÉBITO';
           
           return `
             <div class="linha-conta">
-              <div>
-                <strong>#${conta.venda?.numeroVenda || 'N/A'}</strong><br>
-                <small>${conta.colaborador?.nome || 'N/A'}</small>
-              </div>
-              <div>
-                ${dataVenda}<br>
+              <span>
+                #${conta.venda?.numeroVenda || 'N/A'} | 
+                ${conta.colaborador?.nome || 'N/A'} | 
+                ${dataVenda} | 
                 <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">
-                  ${getStatusLabel(conta.status)}
-                </span>
-              </div>
-              <div style="text-align: center;">
-                <strong>R$ ${conta.valor.toFixed(2)}</strong>
-              </div>
-              <div style="text-align: center;">
-                ${conta.status === 'quitado' 
-                  ? `${formaQuitacao}<br><small class="data-quitacao">${dataQuitacao}</small>` 
-                  : '<em>Pendente</em>'
-                }
-              </div>
+                  ${status}
+                </span> | 
+                R$ ${conta.valor.toFixed(2)} | 
+                ${conta.status === 'quitado' ? `${formaQuitacao} ${dataQuitacao}` : 'PENDENTE'}
+              </span>
             </div>
           `;
         }).join('')}
-
+  
         <!-- Totais -->
         <div class="total-geral">
-          <div>
-            <strong>TOTAL EM DÉBITO:</strong><br>
-            <span style="color: #d97706; font-size: 14px;">R$ ${totalEmDebito.toFixed(2)}</span>
-          </div>
-          <div>
-            <strong>TOTAL QUITADO:</strong><br>
-            <span style="color: #059669; font-size: 14px;">R$ ${totalQuitado.toFixed(2)}</span>
-          </div>
+          <span class="status-debito">TOTAL EM DÉBITO: R$ ${totalEmDebito.toFixed(2)}</span>
+          <span class="status-quitado">TOTAL QUITADO: R$ ${totalQuitado.toFixed(2)}</span>
         </div>
       </body>
       </html>
     `;
-
+  
     const janela = window.open('', '_blank');
     if (janela) {
       janela.document.write(conteudoImpressao);
@@ -380,6 +332,7 @@ export function ContasReceber() {
       janela.print();
     }
   };
+
 
   return (
     <div className="space-y-6">
