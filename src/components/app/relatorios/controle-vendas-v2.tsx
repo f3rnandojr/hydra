@@ -1,13 +1,16 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Filter, Search, User, Store, CreditCard, DollarSign, QrCode, Receipt } from "lucide-react";
+import { Filter, Search, User, Store, CreditCard, DollarSign, QrCode, Receipt, Printer } from "lucide-react";
+import { VendasPrintReport } from "./vendas-print-report";
+
 
 interface Usuario {
   _id: string;
@@ -61,6 +64,13 @@ export function ControleVendasV2() {
     cafeteria: "todos"
   });
 
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: "relatorio-vendas",
+  });
+
   // Buscar vendas quando os filtros mudarem
   useEffect(() => {
     buscarVendas();
@@ -68,7 +78,6 @@ export function ControleVendasV2() {
 
   async function buscarVendas() {
     try {
-      console.log('=== FASE 3: BUSCANDO COM FILTROS ===', filtros);
       setCarregando(true);
       
       const params = new URLSearchParams();
@@ -80,11 +89,6 @@ export function ControleVendasV2() {
 
       const response = await fetch(`/api/relatorios/vendas-v2?${params}`);
       const data = await response.json();
-      
-      console.log('=== DADOS FILTRADOS ===', {
-        totalVendas: data.length,
-        filtrosAplicados: filtros
-      });
       
       setVendas(data);
     } catch (error) {
@@ -143,6 +147,9 @@ export function ControleVendasV2() {
 
   return (
     <div className="space-y-6">
+       <div style={{ display: "none" }}>
+        <VendasPrintReport ref={printRef} vendas={vendas} filtros={filtros} />
+      </div>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div>
@@ -151,6 +158,10 @@ export function ControleVendasV2() {
             Nova versão - Com filtros básicos
           </p>
         </div>
+        <Button onClick={handlePrint} variant="outline" disabled={carregando || vendas.length === 0}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir Relatório
+        </Button>
       </div>
 
       {/* Filtros */}

@@ -89,3 +89,29 @@ body {
     @apply font-headline;
   }
 }
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .no-print {
+    display: none;
+  }
+  .print-only {
+    display: block;
+  }
+  /* Oculta tudo exceto o conteúdo de impressão */
+  body > div:not(.print-container),
+  body > header,
+  body > aside {
+    display: none;
+  }
+  /* Garante que o container de impressão ocupe a página toda */
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
