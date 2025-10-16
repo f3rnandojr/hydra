@@ -1,15 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useReactToPrint } from "react-to-print";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Filter, Search, User, Store, CreditCard, DollarSign, QrCode, Receipt, Printer } from "lucide-react";
-import { VendasPrintReport } from "./vendas-print-report";
 
 
 interface Usuario {
@@ -64,12 +62,51 @@ export function ControleVendasV2() {
     cafeteria: "todos"
   });
 
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: "relatorio-vendas",
-  });
+  const handlePrint = () => {
+    const conteudoImpressao = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Relatório de Vendas</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .linha { display: flex; justify-content: space-between; margin: 5px 0; padding-bottom: 5px; border-bottom: 1px dashed #ccc; }
+          .total { border-top: 2px solid #000; margin-top: 10px; padding-top: 5px; font-weight: bold; }
+          @media print { body { margin: 10px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>RELATÓRIO DE VENDAS</h2>
+          <p>${new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+        
+        ${vendas.flatMap(venda => 
+          venda.itens.map(item => `
+            <div class="linha">
+              <span>${new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})} | ${item.nomeProduto}</span>
+              <span>${item.quantidade} x R$ ${item.precoUnitario.toFixed(2)} | R$ ${item.subtotal.toFixed(2)}</span>
+            </div>
+          `)
+        ).join('')}
+        
+        <div class="linha total">
+          <span>TOTAL GERAL</span>
+          <span>R$ ${vendas.reduce((total, venda) => total + venda.total, 0).toFixed(2)}</span>
+        </div>
+      </body>
+      </html>
+    `;
+  
+    const janela = window.open('', '_blank');
+    if (janela) {
+      janela.document.write(conteudoImpressao);
+      janela.document.close();
+      janela.print();
+    }
+  };
+  
 
   // Buscar vendas quando os filtros mudarem
   useEffect(() => {
@@ -157,9 +194,6 @@ export function ControleVendasV2() {
 
   return (
     <div className="space-y-6">
-       <div style={{ display: "none" }}>
-        <VendasPrintReport ref={printRef} vendas={vendas} filtros={filtros} />
-      </div>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <div>
@@ -379,3 +413,5 @@ export function ControleVendasV2() {
     </div>
   );
 }
+
+    
