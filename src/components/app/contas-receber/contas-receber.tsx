@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock, Printer } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
-import type { ContaReceber as ContaReceberType, Collaborator, Usuario } from "@/lib/definitions";
+import type { ContaReceber as ContaReceberType, Collaborator, Usuario, Setor } from "@/lib/definitions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
@@ -42,6 +42,7 @@ interface ContaReceber extends ContaReceberType {
 interface Filtros {
   status: string;
   colaboradorId: string;
+  setorId: string;
 }
 
 export function ContasReceber() {
@@ -49,15 +50,18 @@ export function ContasReceber() {
   const { usuario } = useAuth();
   const [todasAsContas, setTodasAsContas] = useState<ContaReceber[]>([]);
   const [colaboradores, setColaboradores] = useState<Collaborator[]>([]);
+  const [setores, setSetores] = useState<Setor[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [quitandoTodas, setQuitandoTodas] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
     status: "todos",
-    colaboradorId: "todos"
+    colaboradorId: "todos",
+    setorId: "todos"
   });
 
   useEffect(() => {
     buscarColaboradores();
+    buscarSetores();
     buscarContas();
   }, []);
 
@@ -65,7 +69,9 @@ export function ContasReceber() {
     return todasAsContas.filter(conta => {
         const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
         const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
-        return filtroStatusOk && filtroColaboradorOk;
+        const filtroSetorOk = filtros.setorId === 'todos' || conta.colaborador?.setor === filtros.setorId;
+        
+        return filtroStatusOk && filtroColaboradorOk && filtroSetorOk;
     });
   }, [todasAsContas, filtros]);
 
@@ -79,6 +85,18 @@ export function ContasReceber() {
       }
     } catch (error) {
       console.error('Erro ao buscar colaboradores:', error);
+    }
+  };
+
+  const buscarSetores = async () => {
+    try {
+      const response = await fetch('/api/setores?status=ativo');
+      if (response.ok) {
+        const data = await response.json();
+        setSetores(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar setores:', error);
     }
   };
 
@@ -114,7 +132,8 @@ export function ContasReceber() {
   const limparFiltros = () => {
     setFiltros({
       status: "todos",
-      colaboradorId: "todos"
+      colaboradorId: "todos",
+      setorId: "todos"
     });
     buscarContas();
   };
@@ -499,7 +518,7 @@ export function ContasReceber() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Status */}
             <div className="space-y-2">
               <Label>Status</Label>
@@ -533,6 +552,27 @@ export function ContasReceber() {
                   {colaboradores.map((colab) => (
                     <SelectItem key={colab._id} value={colab._id}>
                       {colab.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Setor */}
+            <div className="space-y-2">
+              <Label>Setor</Label>
+              <Select 
+                value={filtros.setorId} 
+                onValueChange={(value) => handleFiltroChange('setorId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os setores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os setores</SelectItem>
+                  {setores.map((setor) => (
+                    <SelectItem key={setor._id} value={setor.nome}>
+                      {setor.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
