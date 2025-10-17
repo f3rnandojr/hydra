@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -118,13 +117,23 @@ export function PosicaoEstoque() {
     });
   };
 
-  const imprimirRelatorio = () => {
+  const imprimirRelatorio = async () => {
+     let logoUrl = '/logo.svg'; // Fallback
+    try {
+      const logoRes = await fetch('/api/configuracoes/logo');
+      if (logoRes.ok) {
+        const logoData = await logoRes.json();
+        logoUrl = logoData.url;
+      }
+    } catch (e) {
+      console.error("Não foi possível buscar a logo para o relatório.");
+    }
+    
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       const tableHtml = document.getElementById('report-table-container')?.innerHTML;
       const summaryHtml = document.getElementById('report-summary-container')?.innerHTML;
-      const logoUrl = document.getElementById('report-logo')?.getAttribute('src');
-
+      
       printWindow.document.write(`
         <html>
           <head>
@@ -133,7 +142,7 @@ export function PosicaoEstoque() {
               body { font-family: Arial, sans-serif; margin: 20px; }
               .header { text-align: center; margin-bottom: 20px; }
               .logo-relatorio { text-align: center; margin-bottom: 10px; }
-              .logo-relatorio img { height: 40px; }
+              .logo-relatorio img { height: 40px; max-width: 180px; object-fit: contain; }
               table { width: 100%; border-collapse: collapse; font-size: 10px; }
               th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
               th { background-color: #f2f2f2; }
@@ -148,7 +157,7 @@ export function PosicaoEstoque() {
           </head>
           <body>
             <div class="header">
-                ${logoUrl ? `<div class="logo-relatorio"><img src="${logoUrl}" alt="Logo"/></div>` : ''}
+                <div class="logo-relatorio"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"/></div>
               <h1>Relatório de Posição de Estoque</h1>
               <p>${new Date().toLocaleDateString('pt-BR')}</p>
             </div>
@@ -199,15 +208,8 @@ export function PosicaoEstoque() {
     return estoque.filter(item => item.saldo < item.estoqueMinimo).length;
   };
 
-  // Para servir a logo no relatório de impressão
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  useEffect(() => {
-    fetch('/api/configuracoes/logo').then(res => res.json()).then(data => setLogoUrl(data.url));
-  }, []);
-
   return (
     <div className="space-y-6 print:space-y-2">
-      {logoUrl && <img id="report-logo" src={logoUrl} alt="logo" className="hidden" />}
       {/* Cabeçalho */}
       <div className="flex items-center justify-between print:flex-col print:items-start print:space-y-2">
         <div>

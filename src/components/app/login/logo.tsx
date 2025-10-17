@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -39,6 +38,10 @@ export function LoginLogo() {
       height={80}
       className="h-20 w-auto mx-auto mb-6 object-contain"
       unoptimized
+      onError={(e) => {
+          // Fallback para o logo padrão em caso de erro 404 ou outro
+          e.currentTarget.src = '/logo.svg';
+      }}
     />
   );
 }

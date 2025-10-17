@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -70,6 +69,7 @@ export function ContasReceber() {
     return todasAsContas.filter(conta => {
         const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
         const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
+        // Corrigido para usar o nome do setor que vem do colaborador
         const filtroSetorOk = filtros.setorId === 'todos' || conta.colaborador?.setor === filtros.setorId;
         
         return filtroStatusOk && filtroColaboradorOk && filtroSetorOk;
@@ -91,6 +91,7 @@ export function ContasReceber() {
 
   const buscarSetores = async () => {
     try {
+      // Busca apenas setores ativos para o filtro
       const response = await fetch('/api/setores?status=ativo');
       if (response.ok) {
         const data = await response.json();
@@ -140,13 +141,13 @@ export function ContasReceber() {
   };
 
   const calcularTotalEmDebito = () => {
-    return todasAsContas
+    return contasFiltradas // Usar contas filtradas para os totais
       .filter(conta => conta.status === "em_debito")
       .reduce((total, conta) => total + conta.valor, 0);
   };
 
   const calcularTotalQuitado = () => {
-    return todasAsContas
+    return contasFiltradas // Usar contas filtradas para os totais
       .filter(conta => conta.status === "quitado")
       .reduce((total, conta) => total + conta.valor, 0);
   };
@@ -217,7 +218,7 @@ export function ContasReceber() {
     if (contasEmDebito.length === 0) {
       toast({
         title: "Aviso",
-        description: "Não há contas em débito para quitar.",
+        description: "Não há contas em débito para quitar com os filtros atuais.",
         variant: "default",
       });
       return;
@@ -277,7 +278,19 @@ export function ContasReceber() {
     }
   };
 
-  const handlePrintContasReceber = () => {
+  const handlePrintContasReceber = async () => {
+    let logoUrl = '/logo.svg'; // Fallback
+    try {
+      const logoRes = await fetch('/api/configuracoes/logo');
+      if (logoRes.ok) {
+        const logoData = await logoRes.json();
+        logoUrl = logoData.url;
+      }
+    } catch (e) {
+      console.error("Não foi possível buscar a logo para o relatório.");
+    }
+
+
     // Calcular totais
     const totalEmDebito = calcularTotalEmDebito();
     const totalQuitado = calcularTotalQuitado();
@@ -319,6 +332,11 @@ export function ContasReceber() {
           .logo-relatorio {
             text-align: center;
             margin-bottom: 10px;
+          }
+          .logo-relatorio img {
+            height: 40px;
+            max-width: 180px;
+            object-fit: contain;
           }
           .filtros {
             margin-bottom: 10px;
@@ -383,7 +401,7 @@ export function ContasReceber() {
       </head>
       <body>
         <div class="logo-relatorio">
-          <img src="/api/configuracoes/logo?t=relatorio" alt="Logo" style="height: 40px;" />
+          <img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'" />
         </div>
         <div class="header">
           <h1>RELATÓRIO DE CONTAS A RECEBER</h1>
@@ -394,8 +412,8 @@ export function ContasReceber() {
         <div class="filtros">
           <strong>FILTROS:</strong> 
           Status: ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')} | 
-          Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'} |
-          Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s._id === filtros.setorId)?.nome || 'Filtrado')}
+          Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : (colaboradores.find(c => c._id === filtros.colaboradorId)?.nome || 'Filtrado')} |
+          Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s.nome === filtros.setorId)?.nome || 'Filtrado')}
         </div>
   
         <!-- Resumo Geral -->
@@ -614,7 +632,7 @@ export function ContasReceber() {
               R$ {calcularTotalEmDebito().toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Valor total a receber
+              Valor total a receber (considerando filtros)
             </p>
           </CardContent>
         </Card>
@@ -629,7 +647,7 @@ export function ContasReceber() {
               R$ {calcularTotalQuitado().toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Valor já recebido
+              Valor já recebido (considerando filtros)
             </p>
           </CardContent>
         </Card>
