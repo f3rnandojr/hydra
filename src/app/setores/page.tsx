@@ -1,9 +1,11 @@
 import { GerenciarSetores } from "@/components/app/setores/gerenciar-setores";
 
 async function getSetores() {
-    // No futuro, isso pode vir de uma chamada de dados no servidor
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/setores`, { cache: 'no-store' });
+    // A API é chamada usando um caminho relativo, que funciona no servidor e no cliente.
+    const res = await fetch('/api/setores', { cache: 'no-store' });
     if (!res.ok) {
+        // Retorna um array vazio em caso de erro para não quebrar a página.
+        console.error("Falha ao buscar setores:", res.statusText);
         return [];
     }
     const data = await res.json();
