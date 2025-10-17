@@ -83,7 +83,7 @@ export function SetorForm({ setor, onSuccess }: SetorFormProps) {
             <FormItem>
               <FormLabel>Nome do Setor</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: FINANCEIRO" {...field} />
+                <Input placeholder="Ex: FINANCEIRO" {...field} disabled={formState.isSubmitting} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -95,7 +95,7 @@ export function SetorForm({ setor, onSuccess }: SetorFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={formState.isSubmitting}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />

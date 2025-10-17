@@ -21,12 +21,11 @@ export function GerenciarSetores({ initialSetores }: GerenciarSetoresProps) {
       if (response.ok) {
         const updatedSetores = await response.json();
         setSetores(updatedSetores);
-        toast({ title: "Sucesso", description: "Lista de setores atualizada." });
       } else {
         throw new Error("Falha ao buscar setores");
       }
     } catch (error) {
-       toast({ title: "Erro", description: "Não foi possível atualizar a lista de setores.", variant: "destructive"});
+       toast({ title: "Erro de Sincronização", description: "Não foi possível atualizar a lista de setores.", variant: "destructive"});
     }
   };
 
