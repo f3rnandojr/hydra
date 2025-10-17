@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useActionState } from "react";
+import React, { useEffect, useActionState, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +18,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { Collaborator } from "@/lib/definitions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Collaborator, Setor } from "@/lib/definitions";
 import { useToast } from "@/hooks/use-toast";
 
 const collaboratorSchema = z.object({
@@ -47,6 +48,22 @@ type CollaboratorFormProps = {
 export function CollaboratorForm({ collaborator, action, onSuccess }: CollaboratorFormProps) {
   const [state, formAction] = useActionState(action, { message: "" });
   const { toast } = useToast();
+  const [setores, setSetores] = useState<Setor[]>([]);
+
+  useEffect(() => {
+    async function fetchSetores() {
+      try {
+        const res = await fetch('/api/setores?status=ativo');
+        if(res.ok) {
+          const data = await res.json();
+          setSetores(data);
+        }
+      } catch (error) {
+        console.error("Falha ao buscar setores", error);
+      }
+    }
+    fetchSetores();
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(collaborator ? updateSchema : createSchema),
@@ -107,15 +124,26 @@ export function CollaboratorForm({ collaborator, action, onSuccess }: Collaborat
           )}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
+           <FormField
               control={form.control}
               name="setor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Setor</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Vendas" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um setor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {setores.map(s => (
+                        <SelectItem key={s._id} value={s.nome}>
+                          {s.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

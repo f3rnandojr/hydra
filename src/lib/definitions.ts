@@ -5,8 +5,8 @@ export type Collaborator = {
   nome: string;
   email: string;
   senha?: string;
-  setor?: string; // Novo campo
-  matricula?: string; // Novo campo
+  setor?: string; 
+  matricula?: string;
   status: boolean; // true=ativo, false=inativo
   dataCriacao: Date;
   dataAtualizacao: Date;
@@ -116,3 +116,11 @@ export type ContaReceber = {
   usuarioQuitacaoId?: string | ObjectId;
   usuarioQuitacao?: Usuario;
 };
+
+export type Setor = {
+  _id: string;
+  nome: string;
+  status: "ativo" | "inativo";
+  dataCriacao: Date;
+  dataAtualizacao: Date;
+}

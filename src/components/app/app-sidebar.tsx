@@ -12,6 +12,7 @@ import {
   Warehouse,
   Receipt,
   Users2,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -128,6 +129,17 @@ export function AppSidebar() {
               >
                 <Coffee />
                 <span>Cafeterias</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <Link href="/setores">
+              <SidebarMenuButton
+                isActive={pathname.startsWith("/setores")}
+                tooltip="Setores"
+              >
+                <Building2 />
+                <span>Setores</span>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
