@@ -1,8 +1,6 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -10,9 +8,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { UploadCloud, Image as ImageIcon, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface LogoData {
   url: string;
@@ -31,6 +29,8 @@ export function GerenciarLogo() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchLogo = useCallback(async () => {
     setLoading(true);
@@ -49,30 +49,56 @@ export function GerenciarLogo() {
     fetchLogo();
   }, [fetchLogo]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      // Validações
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        toast({ title: "Arquivo Inválido", description: "Por favor, selecione um arquivo PNG, JPG, WEBP ou SVG.", variant: "destructive" });
-        return;
-      }
-      const maxSize = 2 * 1024 * 1024; // 2MB
-      if (file.size > maxSize) {
-        toast({ title: "Arquivo Muito Grande", description: "O tamanho máximo do arquivo é 2MB.", variant: "destructive" });
-        return;
-      }
+  const handleFileValidation = (file: File) => {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Arquivo Inválido", description: "Por favor, selecione um arquivo PNG, JPG, WEBP ou SVG.", variant: "destructive" });
+      return false;
+    }
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast({ title: "Arquivo Muito Grande", description: "O tamanho máximo do arquivo é 2MB.", variant: "destructive" });
+      return false;
+    }
+    return true;
+  };
+
+  const processFile = (file: File) => {
+    if (handleFileValidation(file)) {
       setFileToUpload(file);
       setPreview(URL.createObjectURL(file));
     }
-  }, [toast]);
+  };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.svg', '.webp'] },
-    multiple: false,
-  });
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setIsDragActive(true);
+    } else if (e.type === "dragleave") {
+      setIsDragActive(false);
+    }
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+  
+  const onButtonClick = () => {
+    inputRef.current?.click();
+  };
 
   const handleUpload = async () => {
     if (!fileToUpload) return;
@@ -141,22 +167,28 @@ export function GerenciarLogo() {
           {/* Coluna de Upload */}
           <div className="space-y-4">
             <h3 className="font-medium text-lg">Nova Logo</h3>
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                ${isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}
-            >
-              <input {...getInputProps()} />
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <UploadCloud className="h-10 w-10" />
-                {isDragActive ? (
-                  <p>Solte a imagem aqui...</p>
-                ) : (
-                  <p>Arraste e solte a logo aqui, ou clique para selecionar</p>
-                )}
-                <span className="text-xs">PNG, JPG, SVG, WEBP (máx. 2MB)</span>
-              </div>
-            </div>
+             <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
+                <input ref={inputRef} type="file" id="input-file-upload" className="hidden" accept="image/png, image/jpeg, image/svg+xml, image/webp" onChange={handleChange} />
+                <label 
+                  id="label-file-upload" 
+                  htmlFor="input-file-upload"
+                  className={cn(
+                    "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors block",
+                    isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
+                  )}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                  onClick={onButtonClick}
+                >
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                        <UploadCloud className="h-10 w-10" />
+                        <p>Arraste e solte a logo aqui, ou clique para selecionar</p>
+                        <span className="text-xs">PNG, JPG, SVG, WEBP (máx. 2MB)</span>
+                    </div>
+                </label>
+             </form>
             {fileToUpload && (
               <Button onClick={handleUpload} disabled={uploading} className="w-full">
                 {uploading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <UploadCloud className="h-4 w-4 mr-2" />}
