@@ -221,10 +221,13 @@ export function GerenciarLogo() {
                   <CardTitle className='text-base'>Informações da Logo Atual</CardTitle>
                 </CardHeader>
                 <CardContent className='p-4 text-xs space-y-2'>
-                    <p><strong>Arquivo:</strong> {logo.nomeArquivo}</p>
-                    <p><strong>Tipo:</strong> <Badge variant="secondary">{logo.tipoMime}</Badge></p>
-                    <p><strong>Tamanho:</strong> {(logo.tamanho! / 1024).toFixed(2)} KB</p>
-                    <p><strong>Data Upload:</strong> {new Date(logo.dataUpload!).toLocaleString('pt-BR')}</p>
+                    <div><strong>Arquivo:</strong> {logo.nomeArquivo}</div>
+                    <div className="flex items-center gap-2">
+                        <strong>Tipo:</strong> 
+                        <Badge variant="secondary">{logo.tipoMime}</Badge>
+                    </div>
+                    <div><strong>Tamanho:</strong> {(logo.tamanho! / 1024).toFixed(2)} KB</div>
+                    <div><strong>Data Upload:</strong> {new Date(logo.dataUpload!).toLocaleString('pt-BR')}</div>
                 </CardContent>
               </Card>
             )}
