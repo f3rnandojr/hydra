@@ -1,15 +1,24 @@
 import { GerenciarSetores } from "@/components/app/setores/gerenciar-setores";
+import { getAbsoluteApiUrl } from "@/lib/utils";
 
 async function getSetores() {
-    // A API é chamada usando um caminho relativo, que funciona no servidor e no cliente.
-    const res = await fetch('/api/setores', { cache: 'no-store' });
-    if (!res.ok) {
-        // Retorna um array vazio em caso de erro para não quebrar a página.
-        console.error("Falha ao buscar setores:", res.statusText);
-        return [];
+    try {
+      // Usa a função para garantir que a URL seja absoluta, resolvendo o erro de fetch no servidor.
+      const apiUrl = getAbsoluteApiUrl('/api/setores');
+      const res = await fetch(apiUrl, { cache: 'no-store' });
+      
+      if (!res.ok) {
+          console.error("Falha ao buscar setores:", res.status, res.statusText);
+          const errorBody = await res.text();
+          console.error("Corpo do erro:", errorBody);
+          return [];
+      }
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Erro de conexão ao buscar setores:", error);
+      return [];
     }
-    const data = await res.json();
-    return data;
 }
 
 
