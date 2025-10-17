@@ -386,7 +386,8 @@ export function ContasReceber() {
         <div class="filtros">
           <strong>FILTROS:</strong> 
           Status: ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')} | 
-          Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'}
+          Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : 'Filtrado'} |
+          Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s._id === filtros.setorId)?.nome || 'Filtrado')}
         </div>
   
         <!-- Resumo Geral -->
