@@ -50,11 +50,8 @@ export function SidebarLogo() {
 
 
   return (
-    <div className="flex items-center gap-2 p-2">
+    <div className="flex items-center justify-center p-2">
       {logoContent}
-      <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
-        Hydra
-      </h1>
     </div>
   );
 }

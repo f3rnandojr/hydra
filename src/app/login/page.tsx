@@ -62,8 +62,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pt-8">
           <LoginLogo />
-          <CardTitle className="text-2xl">Hydra</CardTitle>
-          <CardDescription>
+          <CardDescription className='pt-4'>
             Sistema de Gestão de Cafeterias
           </CardDescription>
         </CardHeader>
