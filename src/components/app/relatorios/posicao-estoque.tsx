@@ -163,11 +163,15 @@ export function PosicaoEstoque() {
             </div>
             <div class="summary-grid">${summaryHtml || ''}</div>
             ${tableHtml || ''}
+            <script>
+                window.onload = function() {
+                    window.print();
+                }
+            </script>
           </body>
         </html>
       `);
       printWindow.document.close();
-      printWindow.print();
     }
   };
 

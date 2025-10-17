@@ -19,7 +19,7 @@ interface ContaReceber extends ContaReceberType {
     nome: string;
     email: string;
     matricula?: string;
-    setor?: string;
+    setorId?: string;
   };
   venda: {
     _id: string;
@@ -69,8 +69,7 @@ export function ContasReceber() {
     return todasAsContas.filter(conta => {
         const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
         const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
-        // Corrigido para usar o nome do setor que vem do colaborador
-        const filtroSetorOk = filtros.setorId === 'todos' || conta.colaborador?.setor === filtros.setorId;
+        const filtroSetorOk = filtros.setorId === 'todos' || conta.colaborador?.setorId === filtros.setorId;
         
         return filtroStatusOk && filtroColaboradorOk && filtroSetorOk;
     });
@@ -413,7 +412,7 @@ export function ContasReceber() {
           <strong>FILTROS:</strong> 
           Status: ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')} | 
           Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : (colaboradores.find(c => c._id === filtros.colaboradorId)?.nome || 'Filtrado')} |
-          Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s.nome === filtros.setorId)?.nome || 'Filtrado')}
+          Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s._id === filtros.setorId)?.nome || 'Filtrado')}
         </div>
   
         <!-- Resumo Geral -->
@@ -462,6 +461,11 @@ export function ContasReceber() {
           <span class="status-debito">TOTAL EM DÉBITO: R$ ${totalEmDebito.toFixed(2)}</span>
           <span class="status-quitado">TOTAL QUITADO: R$ ${totalQuitado.toFixed(2)}</span>
         </div>
+        <script>
+            window.onload = function() {
+                window.print();
+            }
+        </script>
       </body>
       </html>
     `;
@@ -470,7 +474,6 @@ export function ContasReceber() {
     if (janela) {
       janela.document.write(conteudoImpressao);
       janela.document.close();
-      janela.print();
     }
   };
 
@@ -598,7 +601,7 @@ export function ContasReceber() {
                 <SelectContent>
                   <SelectItem value="todos">Todos os setores</SelectItem>
                   {setores.map((setor) => (
-                    <SelectItem key={setor._id} value={setor.nome}>
+                    <SelectItem key={setor._id} value={setor._id}>
                       {setor.nome}
                     </SelectItem>
                   ))}
@@ -698,8 +701,8 @@ export function ContasReceber() {
                       {conta.colaborador?.matricula && (
                         <span className="text-muted-foreground">(Mat: {conta.colaborador.matricula})</span>
                       )}
-                      {conta.colaborador?.setor && (
-                        <span className="text-muted-foreground">- {conta.colaborador.setor}</span>
+                      {conta.colaborador?.setorId && (
+                        <span className="text-muted-foreground">- {setores.find(s => s._id === conta.colaborador?.setorId)?.nome || 'Setor não encontrado'}</span>
                       )}
                     </div>
                   </div>
