@@ -1,9 +1,9 @@
+
 "use client";
 
 import { usePathname } from "next/navigation";
 import {
   Users,
-  Waves,
   Package,
   ShoppingCart,
   Settings,
@@ -26,6 +26,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
+import { SidebarLogo } from "./sidebar-logo";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -34,12 +35,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
-          <Waves className="text-primary group-data-[collapsible=icon]:hidden" />
-          <h1 className="text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
-            Hydra
-          </h1>
-        </div>
+        <SidebarLogo />
         <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
       </SidebarHeader>
       <SidebarContent>

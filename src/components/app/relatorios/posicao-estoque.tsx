@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -118,7 +119,47 @@ export function PosicaoEstoque() {
   };
 
   const imprimirRelatorio = () => {
-    window.print();
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const tableHtml = document.getElementById('report-table-container')?.innerHTML;
+      const summaryHtml = document.getElementById('report-summary-container')?.innerHTML;
+      const logoUrl = document.getElementById('report-logo')?.getAttribute('src');
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Relatório de Posição de Estoque</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .logo-relatorio { text-align: center; margin-bottom: 10px; }
+              .logo-relatorio img { height: 40px; }
+              table { width: 100%; border-collapse: collapse; font-size: 10px; }
+              th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
+              th { background-color: #f2f2f2; }
+              .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+              .summary-card { border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+              .summary-title { font-size: 12px; font-weight: bold; }
+              .summary-value { font-size: 16px; font-weight: bold; }
+              .badge { display: inline-block; padding: 2px 6px; font-size: 9px; border-radius: 8px; }
+              .badge-normal { background-color: #e5e7eb; color: #374151; }
+              .badge-minimo { background-color: #fef2f2; color: #b91c1c; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+                ${logoUrl ? `<div class="logo-relatorio"><img src="${logoUrl}" alt="Logo"/></div>` : ''}
+              <h1>Relatório de Posição de Estoque</h1>
+              <p>${new Date().toLocaleDateString('pt-BR')}</p>
+            </div>
+            <div class="summary-grid">${summaryHtml || ''}</div>
+            ${tableHtml || ''}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   // Aplicar filtro de estoque mínimo
@@ -158,8 +199,15 @@ export function PosicaoEstoque() {
     return estoque.filter(item => item.saldo < item.estoqueMinimo).length;
   };
 
+  // Para servir a logo no relatório de impressão
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => {
+    fetch('/api/configuracoes/logo').then(res => res.json()).then(data => setLogoUrl(data.url));
+  }, []);
+
   return (
     <div className="space-y-6 print:space-y-2">
+      {logoUrl && <img id="report-logo" src={logoUrl} alt="logo" className="hidden" />}
       {/* Cabeçalho */}
       <div className="flex items-center justify-between print:flex-col print:items-start print:space-y-2">
         <div>
@@ -278,7 +326,7 @@ export function PosicaoEstoque() {
       </Card>
 
       {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
+      <div id="report-summary-container" className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-3 print:gap-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Itens</CardTitle>
@@ -323,7 +371,7 @@ export function PosicaoEstoque() {
 
       {/* Tabela de Estoque */}
       <Card>
-        <CardHeader>
+        <CardHeader className="print:hidden">
           <CardTitle>Posição de Estoque</CardTitle>
           <CardDescription>
             {estoqueFiltrado.length} produtos encontrados
@@ -337,7 +385,7 @@ export function PosicaoEstoque() {
               Nenhum produto encontrado com os filtros selecionados
             </div>
           ) : (
-            <div className="rounded-md border print:border-none">
+            <div id="report-table-container" className="rounded-md border print:border-none">
               <table className="w-full text-sm print:text-xs">
                 <thead className="print:bg-transparent">
                   <tr className="border-b bg-muted/50 print:bg-transparent">

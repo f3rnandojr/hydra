@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -315,6 +316,10 @@ export function ContasReceber() {
             border-bottom: 1px solid #000;
             padding-bottom: 5px;
           }
+          .logo-relatorio {
+            text-align: center;
+            margin-bottom: 10px;
+          }
           .filtros {
             margin-bottom: 10px;
             padding: 8px;
@@ -377,6 +382,9 @@ export function ContasReceber() {
         </style>
       </head>
       <body>
+        <div class="logo-relatorio">
+          <img src="/api/configuracoes/logo?t=relatorio" alt="Logo" style="height: 40px;" />
+        </div>
         <div class="header">
           <h1>RELATÓRIO DE CONTAS A RECEBER</h1>
           <p>${new Date().toLocaleDateString('pt-BR')}</p>

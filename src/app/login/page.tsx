@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { LoginLogo } from '@/components/app/login/logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -58,7 +60,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pt-8">
+          <LoginLogo />
           <CardTitle className="text-2xl">Hydra</CardTitle>
           <CardDescription>
             Sistema de Gestão de Cafeterias
