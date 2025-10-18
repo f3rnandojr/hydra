@@ -75,22 +75,22 @@ export function ControleVendasV2() {
 
 
   const handlePrint = () => {
-      // Mapeamento de formas de pagamento (deve vir antes do cálculo)
+    // Mapeamento de formas de pagamento (deve vir antes do cálculo)
     const getPaymentLabel = (tipo: string) => {
-        const tipos: { [key: string]: string } = {
+      const tipos: { [key: string]: string } = {
         'dinheiro': 'Dinheiro',
         'cartao_credito': 'Cartão Crédito', 
         'cartao_debito': 'Cartão Débito',
         'pix': 'PIX',
         'apagar': 'À Pagar'
-        };
-        return tipos[tipo] || tipo;
+      };
+      return tipos[tipo] || tipo;
     };
     
     // Calcular totais
     const totalGeral = vendas.reduce((total, venda) => total + venda.total, 0);
     const totalItens = vendas.flatMap(v => v.itens).reduce((sum, item) => sum + item.quantidade, 0);
-
+  
     // Calcular resumo por forma de pagamento (SE a opção estiver ativa)
     const resumoPagamentos = opcoesRelatorio.mostrarResumoPagamentos 
       ? vendas.reduce((acc, venda) => {
@@ -107,7 +107,7 @@ export function ControleVendasV2() {
           return acc;
         }, {} as { [key: string]: { quantidade: number; total: number; label: string } })
       : {};
-
+  
     // Calcular quantidade por produto (SE a opção estiver ativa)
     const quantidadePorProduto = opcoesRelatorio.mostrarQuantidadeItens 
       ? vendas.flatMap(v => v.itens).reduce((acc, item) => {
@@ -118,11 +118,11 @@ export function ControleVendasV2() {
           return acc;
         }, {} as { [key: string]: number })
       : {};
-
+  
     // Texto dos filtros aplicados
     const getFiltroTexto = (filtro: string, valor: string) => {
-        if (valor === 'todos') return 'Todos';
-        const map: { [key: string]: string } = {
+      if (valor === 'todos') return 'Todos';
+      const map: { [key: string]: string } = {
         'hoje': 'Hoje',
         'semana': 'Esta Semana', 
         'mes': 'Este Mês',
@@ -138,16 +138,16 @@ export function ControleVendasV2() {
         'horario': 'Horário',
         'produto': 'Produto', 
         'pagamento': 'Forma de Pagamento'
-        };
-        return map[valor] || valor;
+      };
+      return map[valor] || valor;
     };
-
+  
     // Preparar dados para o relatório
     const itensRelatorio = vendas.flatMap(venda => 
-        venda.itens.map(item => ({
+      venda.itens.map(item => ({
         horario: new Date(venda.dataVenda).toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit'
+          hour: '2-digit',
+          minute: '2-digit'
         }),
         dataCompleta: venda.dataVenda,
         produto: item.nomeProduto,
@@ -156,24 +156,24 @@ export function ControleVendasV2() {
         totalItem: item.subtotal,
         formaPagamento: getPaymentLabel(venda.formaPagamento),
         formaPagamentoOriginal: venda.formaPagamento
-        }))
+      }))
     );
-
+  
     // Aplicar ordenação baseada no filtro
     switch (filtros.ordenacao) {
-        case 'produto':
+      case 'produto':
         itensRelatorio.sort((a, b) => a.produto.localeCompare(b.produto));
         break;
-        case 'pagamento':
+      case 'pagamento':
         itensRelatorio.sort((a, b) => a.formaPagamento.localeCompare(b.formaPagamento));
         break;
-        case 'horario':
-        default:
+      case 'horario':
+      default:
         itensRelatorio.sort((a, b) => a.horario.localeCompare(b.horario));
         break;
     }
-
-      // Texto do resumo geral (adaptável conforme opções)
+  
+    // Texto do resumo geral (adaptável conforme opções)
     const textoResumoGeral = [
       `${vendas.length} VENDAS`,
       opcoesRelatorio.mostrarQuantidadeItens && `${totalItens} ITENS`,
@@ -213,35 +213,35 @@ export function ControleVendasV2() {
             border: 1px solid #ddd;
             font-size: 10px;
           }
-           .resumo-geral {
-                margin: 8px 0;
-                text-align: center;
-                font-weight: bold;
-                font-size: 10px;
-                padding: 8px;
-                background: #f0f0f0;
-                border-radius: 4px;
-            }
-            .resumo-produtos, .resumo-pagamentos {
-                margin: 10px 0;
-                padding: 8px;
-                border: 1px solid #ccc;
-                background: #f8f8f8;
-                font-size: 10px;
-            }
-            .resumo-produtos table, .resumo-pagamentos table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-            .resumo-produtos td, .resumo-pagamentos td {
-                padding: 2px 5px;
-                border-bottom: 1px dotted #ddd;
-            }
-            .resumo-pagamentos .total-linha {
-                font-weight: bold;
-                border-top: 1px solid #000;
-                border-bottom: none;
-            }
+          .resumo-geral {
+            margin: 8px 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+          }
+          .resumo-produtos, .resumo-pagamentos {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ccc;
+            background: #f8f8f8;
+            font-size: 10px;
+          }
+          .resumo-produtos table, .resumo-pagamentos table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .resumo-produtos td, .resumo-pagamentos td {
+            padding: 2px 5px;
+            border-bottom: 1px dotted #ddd;
+          }
+          .resumo-pagamentos .total-linha {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            border-bottom: none;
+          }
           .cabecalho-linhas {
             font-weight: bold;
             border-bottom: 1px solid #000;
@@ -301,9 +301,9 @@ export function ControleVendasV2() {
   
         <!-- Resumo Geral -->
         <div class="resumo-geral">
-            ${textoResumoGeral}
+          ${textoResumoGeral}
         </div>
-
+  
         <!-- Resumo por Produto (SE ATIVADO) -->
         ${opcoesRelatorio.mostrarQuantidadeItens && Object.keys(quantidadePorProduto).length > 0 ? `
           <div class="resumo-produtos">
@@ -318,25 +318,25 @@ export function ControleVendasV2() {
             </table>
           </div>
         ` : ''}
-
+  
         <!-- Resumo por Forma de Pagamento (SE ATIVADO) -->
         ${opcoesRelatorio.mostrarResumoPagamentos && Object.keys(resumoPagamentos).length > 0 ? `
           <div class="resumo-pagamentos">
-              <strong>RESUMO POR FORMA DE PAGAMENTO:</strong>
-              <table>
-                  ${Object.entries(resumoPagamentos).map(([forma, dados]) => `
-                      <tr>
-                      <td>${dados.label}:</td>
-                      <td>${dados.quantidade} vendas</td>
-                      <td>R$ ${dados.total.toFixed(2)}</td>
-                      </tr>
-                  `).join('')}
-                  <tr class="total-linha">
-                      <td><strong>TOTAL:</strong></td>
-                      <td><strong>${vendas.length} vendas</strong></td>
-                      <td><strong>R$ ${totalGeral.toFixed(2)}</strong></td>
-                  </tr>
-              </table>
+            <strong>RESUMO POR FORMA DE PAGAMENTO:</strong>
+            <table>
+              ${Object.entries(resumoPagamentos).map(([forma, dados]) => `
+                <tr>
+                  <td>${dados.label}:</td>
+                  <td>${dados.quantidade} vendas</td>
+                  <td>R$ ${dados.total.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-linha">
+                <td><strong>TOTAL:</strong></td>
+                <td><strong>${vendas.length} vendas</strong></td>
+                <td><strong>R$ ${totalGeral.toFixed(2)}</strong></td>
+              </tr>
+            </table>
           </div>
         ` : ''}
   
@@ -364,14 +364,28 @@ export function ControleVendasV2() {
       </html>
     `;
   
-    const janela = window.open('', '_blank');
+    // ✅ CORREÇÃO: Abrir janela e aguardar antes de imprimir
+    const janela = window.open('', '_blank', 'width=800,height=600');
     if (janela) {
       janela.document.write(conteudoImpressao);
       janela.document.close();
-      janela.print();
+      
+      // ✅ AGUARDAR o carregamento completo antes de imprimir
+      janela.onload = () => {
+        setTimeout(() => {
+          janela.print();
+          // ✅ NÃO FECHAR automaticamente - deixar usuário controlar
+        }, 500);
+      };
+      
+      // ✅ Fallback caso onload não funcione
+      setTimeout(() => {
+        if (!janela.closed) {
+          janela.print();
+        }
+      }, 1000);
     }
   };
-  
 
   // Buscar vendas quando os filtros mudarem
   useEffect(() => {
