@@ -56,34 +56,37 @@ export function CupomFiscalDialog({ open, onOpenChange, vendaId }: CupomFiscalDi
   }, [open, vendaId]);
 
   const handlePrint = () => {
-    const printWindow = window.open('', '', 'height=800,width=800');
-    if (printWindow && cupomRef.current) {
-        printWindow.document.write('<html><head><title>Cupom Fiscal</title>');
-        // Incluir estilos básicos para impressão
+    const printContent = cupomRef.current;
+    if (printContent) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
         printWindow.document.write(`
-            <style>
-                body { font-family: monospace; line-height: 1.4; margin: 0; padding: 10px; width: 300px; }
-                .cupom-fiscal { width: 100%; border: 1px solid #ccc; padding: 10px; }
-                .text-center { text-align: center; }
-                .font-bold { font-weight: bold; }
-                .text-xs { font-size: 10px; }
-                .uppercase { text-transform: uppercase; }
-                .my-2 { margin-top: 8px; margin-bottom: 8px; }
-                .border-t { border-top: 1px dashed #666; }
-                .pt-2 { padding-top: 8px; }
-                .flex { display: flex; }
-                .justify-between { justify-content: space-between; }
-                .w-full { width: 100%; }
-                .mb-2 { margin-bottom: 8px; }
-                hr { border: none; border-top: 1px dashed #666; margin: 8px 0; }
-            </style>
+          <html>
+            <head>
+              <title>Cupom Fiscal</title>
+              <style>
+                body { font-family: monospace; font-size: 11px; line-height: 1.3; margin: 0; padding: 10px; color: black; }
+                .cupom-copy { break-after: page; }
+                .cupom-copy:last-child { break-after: avoid; }
+                @media print {
+                  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="cupom-copy">${printContent.innerHTML}</div>
+              <div class="cupom-copy">${printContent.innerHTML}</div>
+              <script>
+                setTimeout(() => {
+                  window.print();
+                  setTimeout(() => window.close(), 100);
+                }, 250);
+              </script>
+            </body>
+          </html>
         `);
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(cupomRef.current.innerHTML);
-        printWindow.document.write('</body></html>');
         printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+      }
     }
   };
 
@@ -122,7 +125,7 @@ export function CupomFiscalDialog({ open, onOpenChange, vendaId }: CupomFiscalDi
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
           <Button onClick={handlePrint} disabled={isLoading || !!error}>
             <Printer className="mr-2 h-4 w-4" />
-            Imprimir
+            Imprimir (2 vias)
           </Button>
         </DialogFooter>
       </DialogContent>

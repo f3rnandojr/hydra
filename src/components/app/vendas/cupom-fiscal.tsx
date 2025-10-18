@@ -53,7 +53,7 @@ export function CupomFiscal({ venda, estabelecimento }: CupomFiscalProps) {
         <p>IM: {estabelecimento.inscricaoEstadual || "0.000.000-0"}</p>
       </div>
 
-      <hr className="my-2" />
+      <hr className="my-2 border-black" />
 
       {venda.tipoCliente === 'colaborador' && venda.colaborador && (
         <>
@@ -63,61 +63,70 @@ export function CupomFiscal({ venda, estabelecimento }: CupomFiscalProps) {
             {venda.colaborador.matricula && <p>MATRICULA: {venda.colaborador.matricula}</p>}
             {venda.colaborador.setor && <p>SETOR: {venda.colaborador.setor}</p>}
           </div>
-          <hr className="my-2" />
+          <hr className="my-2 border-black" />
         </>
       )}
 
       <div className="text-center">
         <p>{new Date(venda.dataVenda).toLocaleString('pt-BR')}</p>
         <p>CUPOM FISCAL ELETRÔNICO - SAT</p>
-        <p>Extrato Nº {venda.numeroVenda}</p>
+        <p>Extrato Nº {venda.numeroVenda?.toString().padStart(8, '0')}</p>
       </div>
 
-      <hr className="my-2" />
+      <hr className="my-2 border-black" />
 
       <div>
         <p className="text-center font-bold mb-2">DETALHE DA VENDA</p>
         <div className="w-full">
-            <div className="flex font-bold">
-                <div className="flex-grow">#|COD|DESC|QTD|UN|VL UN R$|VL ITEM R$</div>
+          {/* Cabeçalho da tabela */}
+          <div className="flex text-[10px] font-bold border-b border-black pb-1 mb-1">
+            <span className="w-8">#</span>
+            <span className="w-12">COD</span>
+            <span className="flex-1">DESC</span>
+            <span className="w-8 text-center">QTD</span>
+            <span className="w-8 text-center">UN</span>
+            <span className="w-16 text-right">VL UN R$</span>
+            <span className="w-16 text-right">VL ITEM R$</span>
+          </div>
+          
+          {/* Itens da venda */}
+          {venda.itens.map((item, index) => (
+            <div key={index} className="flex items-start py-1 text-[10px]">
+              <span className="w-8">{String(index + 1).padStart(3, '0')}</span>
+              <span className="w-12">({item.codigoEAN || 'S/COD'})</span>
+              <span className="flex-1 uppercase truncate pr-1">{item.nomeProduto}</span>
+              <span className="w-8 text-center">{item.quantidade}</span>
+              <span className="w-8 text-center">UN</span>
+              <span className="w-16 text-right">{formatPrice(item.precoUnitario)}</span>
+              <span className="w-16 text-right">{formatPrice(item.subtotal)}</span>
             </div>
-            {venda.itens.map((item, index) => (
-            <div key={index} className="flex">
-                <div className="w-full">
-                    <span>{String(index + 1).padStart(3, '0')}</span>
-                    <span className="ml-1">({item.codigoEAN || 'S/COD'})</span>
-                    <p className="uppercase ml-1">{item.nomeProduto}</p>
-                    <div className="flex justify-end">
-                       <span>{item.quantidade} x {formatPrice(item.precoUnitario)}</span>
-                       <span className="w-20 text-right">{formatPrice(item.subtotal)}</span>
-                    </div>
-                </div>
-            </div>
-            ))}
+          ))}
         </div>
       </div>
 
-      <hr className="my-2" />
+      <hr className="my-2 border-black" />
 
-      <div className="space-y-1">
+      <div className="space-y-1 text-[11px]">
         <div className="flex justify-between font-bold">
           <span>TOTAL R$</span>
           <span>{formatPrice(venda.total)}</span>
         </div>
         <div className="flex justify-between">
-          <span>{venda.formaPagamento.replace('_', ' ').toUpperCase()}</span>
+          <span>{venda.formaPagamento?.replace('_', ' ').toUpperCase() || 'DINHEIRO'}</span>
           <span>{formatPrice(venda.total)}</span>
         </div>
       </div>
       
-       <hr className="my-2" />
+      <hr className="my-2 border-black" />
 
-       <div className="text-center text-xs">
-            <p>SAT No. {estabelecimento.numeroSat || '000.000.000'}</p>
-            <p>Consulte o QR Code pelo aplicativo DeOlhoNoImposto</p>
-            <p className="font-bold my-2">--CHAVE--DE--ACESSO--</p>
-            <p className="break-all text-[10px]">35240700000000000000590000000000000000000000</p>
-        </div>
+      <div className="text-center text-[10px]">
+        <p>SAT No. {estabelecimento.numeroSat || '000.000.000'}</p>
+        <p>Consulte o QR Code pelo aplicativo DeOlhoNoImposto</p>
+        <p className="font-bold my-2">-- CHAVE DE ACESSO --</p>
+        <p className="break-all text-[8px] leading-tight">
+          35240700000000000000590000000000000000000000
+        </p>
+      </div>
     </div>
   );
 }
