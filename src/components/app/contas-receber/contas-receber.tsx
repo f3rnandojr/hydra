@@ -74,7 +74,7 @@ export function ContasReceber() {
   const [currentDate, setCurrentDate] = useState<string>('');
 
   useEffect(() => {
-    setCurrentDate(new Date().toLocaleDateString('pt-BR'));
+    setCurrentDate(new Date().toLocaleString('pt-BR'));
   }, []);
 
 
@@ -711,7 +711,7 @@ export function ContasReceber() {
       <div ref={reportRef} className="hidden print:block">
         <div className="text-center mb-4">
           <h1 className="text-xl font-bold">RELATÓRIO DE CONTAS A RECEBER</h1>
-          <p>Emitido em: {currentDate || 'Carregando...'}</p>
+          <p>Impresso em: {currentDate || 'Carregando...'}</p>
           <div className="text-sm mt-2">
             <p><strong>Filtros Aplicados:</strong></p>
             <p>
