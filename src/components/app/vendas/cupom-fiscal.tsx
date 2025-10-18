@@ -55,6 +55,18 @@ export function CupomFiscal({ venda, estabelecimento }: CupomFiscalProps) {
 
       <hr className="my-2" />
 
+      {venda.tipoCliente === 'colaborador' && venda.colaborador && (
+        <>
+          <div className="text-center">
+            <p className="font-bold">DADOS DO COLABORADOR</p>
+            <p>NOME: {venda.colaborador.nome}</p>
+            {venda.colaborador.matricula && <p>MATRICULA: {venda.colaborador.matricula}</p>}
+            {venda.colaborador.setor && <p>SETOR: {venda.colaborador.setor}</p>}
+          </div>
+          <hr className="my-2" />
+        </>
+      )}
+
       <div className="text-center">
         <p>{new Date(venda.dataVenda).toLocaleString('pt-BR')}</p>
         <p>CUPOM FISCAL ELETRÔNICO - SAT</p>
