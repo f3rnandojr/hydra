@@ -12,7 +12,6 @@ const getPrintStyles = () => `
   }
   @media print {
     body { margin: 10px; }
-    .no-print { display: none !important; }
   }
   table {
     width: 100%;
@@ -55,7 +54,7 @@ export const usePrint = () => {
 
     const contentClone = content.cloneNode(true) as HTMLElement;
     
-    // Remove elementos que não devem aparecer na impressão
+    // Limpar elementos interativos que não devem aparecer na impressão
     const noPrintElements = contentClone.querySelectorAll('.no-print');
     noPrintElements.forEach(el => el.remove());
 
@@ -69,12 +68,8 @@ export const usePrint = () => {
             ${getPrintStyles()}
           </style>
         </head>
-        <body onload="setTimeout(function() { window.print(); }, 500);">
+        <body onload="window.print()">
           <div class="print-container">
-            <div class="header">
-              <h2>${title}</h2>
-              <p>Emitido em: ${new Date().toLocaleString('pt-BR')}</p>
-            </div>
             ${contentClone.innerHTML}
           </div>
         </body>
@@ -83,6 +78,13 @@ export const usePrint = () => {
 
     printWindow.document.close();
     
+    // Fallback para garantir a impressão
+    setTimeout(() => {
+      if (!printWindow.closed) {
+        printWindow.print();
+      }
+    }, 1000);
+
   }, []);
 
   return { handlePrint };

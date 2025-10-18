@@ -346,7 +346,6 @@ export function ContasReceber() {
           </div>
       </div>
 
-      <div ref={reportRef}>
         {/* Filtros */}
         <Card className="no-print">
           <CardHeader>
@@ -562,6 +561,69 @@ export function ContasReceber() {
             )}
           </CardContent>
         </Card>
+
+      {/* VERSÃO OCULTA PARA IMPRESSÃO - Só aparece na impressão */}
+      <div ref={reportRef} className="hidden print:block">
+        <div className="text-center mb-4">
+          <h1 className="text-xl font-bold">RELATÓRIO DE CONTAS A RECEBER</h1>
+          <p>Emitido em: {new Date().toLocaleDateString('pt-BR')}</p>
+        </div>
+
+        <hr className="my-2 border-black" />
+
+        <div className="mb-4">
+          <p className="font-bold">VENDA</p>
+          <table className="w-full border-collapse border border-black text-xs">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-black p-1">VENDA</th>
+                <th className="border border-black p-1">COLABORADOR</th>
+                <th className="border border-black p-1">DATA</th>
+                <th className="border border-black p-1">STATUS</th>
+                <th className="border border-black p-1">VALOR</th>
+                <th className="border border-black p-1">QUITAÇÃO</th>
+                <th className="border border-black p-1">DATA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contasFiltradas.map((conta) => (
+                <tr key={conta._id}>
+                  <td className="border border-black p-1">#{conta.venda?.numeroVenda?.padStart(8, '0')}</td>
+                  <td className="border border-black p-1">{conta.colaborador?.nome}</td>
+                  <td className="border border-black p-1">{new Date(conta.dataVenda).toLocaleDateString('pt-BR')}</td>
+                  <td className="border border-black p-1">{conta.status === 'em_debito' ? 'EM DÉBITO' : 'QUITADO'}</td>
+                  <td className="border border-black p-1 text-right">R$ {conta.valor.toFixed(2)}</td>
+                  <td className="border border-black p-1">{conta.formaQuitacao || '-'}</td>
+                  <td className="border border-black p-1">{conta.dataQuitacao ? new Date(conta.dataQuitacao).toLocaleDateString('pt-BR') : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <hr className="my-2 border-black" />
+
+        <div className="font-bold mb-2">
+          <p>TOTAL EM DÉBITO: R$ {calcularTotalEmDebito().toFixed(2)}</p>
+        </div>
+
+        <hr className="my-2 border-black" />
+
+        <div className="text-sm mb-2">
+          <p><strong>FILTROS:</strong> Status: {filtros.status} | Colaborador: {filtros.colaboradorId === 'todos' ? 'Todos' : colaboradores.find(c => c._id === filtros.colaboradorId)?.nome} | Setor: {filtros.setorId === 'todos' ? 'Todos' : setores.find(s => s._id === filtros.setorId)?.nome}</p>
+        </div>
+
+        <hr className="my-2 border-black" />
+
+        <div className="text-sm">
+          <p>
+            <strong>{contasFiltradas.length} CONTAS</strong> | 
+            <strong> {contasFiltradas.filter(c=> c.status === 'em_debito').length} EM DÉBITO</strong> | 
+            <strong> {contasFiltradas.filter(c=> c.status === 'quitado').length} QUITADAS</strong> | 
+            <strong> A RECEBER: R$ {calcularTotalEmDebito().toFixed(2)}</strong> | 
+            <strong> RECEBIDO: R$ {calcularTotalQuitado().toFixed(2)}</strong>
+          </p>
+        </div>
       </div>
     </div>
   );
