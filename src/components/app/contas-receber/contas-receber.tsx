@@ -357,6 +357,15 @@ export function ContasReceber() {
     }
   };
 
+  const getNomeFiltro = (tipo: 'status' | 'periodo' | 'ordenacao', valor: string) => {
+    const mapaNomes = {
+      status: { todos: 'Todos', em_debito: 'Em Débito', quitado: 'Quitados' },
+      periodo: { todos: 'Qualquer Data', hoje: 'Hoje', semana: 'Esta Semana', mes: 'Este Mês', personalizado: 'Personalizado' },
+      ordenacao: { data: 'Data', status: 'Status', colaborador: 'Colaborador', setor: 'Setor' }
+    };
+    return mapaNomes[tipo][valor as keyof typeof mapaNomes[tipo]] || valor;
+  }
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -703,6 +712,18 @@ export function ContasReceber() {
         <div className="text-center mb-4">
           <h1 className="text-xl font-bold">RELATÓRIO DE CONTAS A RECEBER</h1>
           <p>Emitido em: {currentDate || 'Carregando...'}</p>
+          <div className="text-sm mt-2">
+            <p><strong>Filtros Aplicados:</strong></p>
+            <p>
+              Status: <span className="font-semibold">{getNomeFiltro('status', filtros.status)}</span> | 
+              Período: <span className="font-semibold">{getNomeFiltro('periodo', filtros.periodo)}</span> | 
+              Ordenado por: <span className="font-semibold capitalize">{getNomeFiltro('ordenacao', filtros.ordenacao)}</span>
+            </p>
+            <p>
+              Colaborador: <span className="font-semibold">{filtros.colaboradorId === 'todos' ? 'Todos' : colaboradores.find(c => c._id === filtros.colaboradorId)?.nome}</span> | 
+              Setor: <span className="font-semibold">{filtros.setorId === 'todos' ? 'Todos' : setores.find(s => s._id === filtros.setorId)?.nome}</span>
+            </p>
+          </div>
         </div>
 
         <hr className="my-2 border-black" />
@@ -741,12 +762,6 @@ export function ContasReceber() {
 
         <div className="font-bold mb-2">
           <p>TOTAL EM DÉBITO: R$ {calcularTotalEmDebito().toFixed(2)}</p>
-        </div>
-
-        <hr className="my-2 border-black" />
-
-        <div className="text-sm mb-2">
-          <p><strong>FILTROS:</strong> Status: {filtros.status} | Colaborador: {filtros.colaboradorId === 'todos' ? 'Todos' : colaboradores.find(c => c._id === filtros.colaboradorId)?.nome} | Setor: {filtros.setorId === 'todos' ? 'Todos' : setores.find(s => s._id === filtros.setorId)?.nome}</p>
         </div>
 
         <hr className="my-2 border-black" />
