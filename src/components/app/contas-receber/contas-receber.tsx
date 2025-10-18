@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock, Printer } from "lucide-react";
+import { Search, Filter, DollarSign, User, Calendar, CheckCircle, Clock, Printer, SortAsc, SortDesc } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import type { ContaReceber as ContaReceberType, Collaborator, Usuario, Setor } from "@/lib/definitions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -44,6 +45,10 @@ interface Filtros {
   status: string;
   colaboradorId: string;
   setorId: string;
+  periodo: "hoje" | "semana" | "mes" | "todos" | "personalizado";
+  dataInicio?: string;
+  dataFim?: string;
+  ordenacao: "data" | "status" | "colaborador" | "setor";
 }
 
 export function ContasReceber() {
@@ -57,7 +62,11 @@ export function ContasReceber() {
   const [filtros, setFiltros] = useState<Filtros>({
     status: "todos",
     colaboradorId: "todos",
-    setorId: "todos"
+    setorId: "todos",
+    periodo: "todos",
+    dataInicio: "",
+    dataFim: "",
+    ordenacao: "data"
   });
   
   const { handlePrint } = usePrint();
@@ -76,16 +85,72 @@ export function ContasReceber() {
   }, []);
 
   const contasFiltradas = useMemo(() => {
-    return todasAsContas.filter(conta => {
+    let contas = todasAsContas.filter(conta => {
         const colaborador = colaboradores.find(c => c._id === conta.colaboradorId);
         
         const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
         const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
         const filtroSetorOk = filtros.setorId === 'todos' || colaborador?.setorId === filtros.setorId;
+
+        // Filtro de data
+        const dataVenda = new Date(conta.dataVenda);
+        let filtroDataOk = true;
+        if (filtros.periodo !== 'todos') {
+            const hoje = new Date();
+            const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
+            const fimHoje = new Date(hoje.setHours(23, 59, 59, 999));
+
+            switch(filtros.periodo) {
+                case 'hoje':
+                    filtroDataOk = dataVenda >= inicioHoje && dataVenda <= fimHoje;
+                    break;
+                case 'semana':
+                    const inicioSemana = new Date(hoje);
+                    inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+                    inicioSemana.setHours(0,0,0,0);
+                    filtroDataOk = dataVenda >= inicioSemana;
+                    break;
+                case 'mes':
+                    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    filtroDataOk = dataVenda >= inicioMes;
+                    break;
+                case 'personalizado':
+                    const dataInicio = filtros.dataInicio ? new Date(filtros.dataInicio + 'T00:00:00') : null;
+                    const dataFim = filtros.dataFim ? new Date(filtros.dataFim + 'T23:59:59') : null;
+                    if(dataInicio && dataFim) {
+                        filtroDataOk = dataVenda >= dataInicio && dataVenda <= dataFim;
+                    } else if (dataInicio) {
+                        filtroDataOk = dataVenda >= dataInicio;
+                    } else if (dataFim) {
+                        filtroDataOk = dataVenda <= dataFim;
+                    }
+                    break;
+            }
+        }
         
-        return filtroStatusOk && filtroColaboradorOk && filtroSetorOk;
+        return filtroStatusOk && filtroColaboradorOk && filtroSetorOk && filtroDataOk;
     });
-  }, [todasAsContas, filtros, colaboradores]);
+
+    // Ordenação
+    contas.sort((a, b) => {
+        switch(filtros.ordenacao) {
+            case 'status':
+                return a.status.localeCompare(b.status);
+            case 'colaborador':
+                return (a.colaborador?.nome || '').localeCompare(b.colaborador?.nome || '');
+            case 'setor':
+                const setorA = setores.find(s => s._id === colaboradores.find(c => c._id === a.colaboradorId)?.setorId)?.nome || '';
+                const setorB = setores.find(s => s._id === colaboradores.find(c => c._id === b.colaboradorId)?.setorId)?.nome || '';
+                return setorA.localeCompare(setorB);
+            case 'data':
+            default:
+                return new Date(b.dataVenda).getTime() - new Date(a.dataVenda).getTime();
+        }
+    });
+
+
+    return contas;
+  }, [todasAsContas, filtros, colaboradores, setores]);
 
 
   const buscarColaboradores = async () => {
@@ -145,7 +210,11 @@ export function ContasReceber() {
     setFiltros({
       status: "todos",
       colaboradorId: "todos",
-      setorId: "todos"
+      setorId: "todos",
+      periodo: "todos",
+      dataInicio: "",
+      dataFim: "",
+      ordenacao: "data"
     });
     buscarContas();
   };
@@ -360,7 +429,7 @@ export function ContasReceber() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Status */}
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -420,6 +489,68 @@ export function ContasReceber() {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Ordenação */}
+              <div className="space-y-2">
+                <Label>Ordenar Por</Label>
+                <Select 
+                  value={filtros.ordenacao} 
+                  onValueChange={(value) => handleFiltroChange('ordenacao', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="data">Data da Venda</SelectItem>
+                    <SelectItem value="status">Status</SelectItem>
+                    <SelectItem value="colaborador">Colaborador</SelectItem>
+                    <SelectItem value="setor">Setor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                {/* Período */}
+                <div className="space-y-2">
+                  <Label>Período</Label>
+                  <Select 
+                    value={filtros.periodo} 
+                    onValueChange={(value: Filtros['periodo']) => handleFiltroChange('periodo', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Qualquer Data</SelectItem>
+                      <SelectItem value="hoje">Hoje</SelectItem>
+                      <SelectItem value="semana">Esta Semana</SelectItem>
+                      <SelectItem value="mes">Este Mês</SelectItem>
+                      <SelectItem value="personalizado">Personalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Período Personalizado */}
+                {filtros.periodo === 'personalizado' && (
+                    <>
+                        <div className="space-y-2">
+                            <Label>Data de Início</Label>
+                            <Input 
+                            type="date" 
+                            value={filtros.dataInicio || ''}
+                            onChange={(e) => handleFiltroChange('dataInicio', e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Data de Fim</Label>
+                            <Input 
+                            type="date" 
+                            value={filtros.dataFim || ''}
+                            onChange={(e) => handleFiltroChange('dataFim', e.target.value)}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Botões de Ação */}
