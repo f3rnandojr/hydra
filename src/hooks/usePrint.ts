@@ -1,63 +1,29 @@
+
 "use client";
 
 import { useCallback } from 'react';
 
-const getPrintStyles = () => `
-  body { 
-    font-family: 'Arial', sans-serif; 
-    margin: 15px;
-    color: #000;
-    font-size: 12px;
-    line-height: 1.3;
-  }
-  @media print {
-    body { margin: 10px; }
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-  }
-  th, td {
-    border: 1px solid #000;
-    padding: 4px 6px;
-    text-align: left;
-  }
-  th {
-    background-color: #f0f0f0;
-    font-weight: bold;
-  }
-  .header {
-    text-align: center;
-    margin-bottom: 15px;
-  }
-  .total {
-    font-weight: bold;
-    background-color: #f9f9f9;
-    padding: 8px;
-    margin: 10px 0;
-  }
-`;
-
 export const usePrint = () => {
   const handlePrint = useCallback((content: HTMLElement | null, title: string = 'Relatório') => {
     if (!content) {
-      console.error('Elemento de conteúdo para impressão não foi encontrado.');
+      console.error('Elemento de conteúdo não encontrado');
       return;
     }
 
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     if (!printWindow) {
-      alert('Por favor, permita pop-ups para imprimir o relatório.');
+      alert('Permita pop-ups para imprimir o relatório');
       return;
     }
 
+    // Clonar o conteúdo
     const contentClone = content.cloneNode(true) as HTMLElement;
     
-    // Limpar elementos interativos que não devem aparecer na impressão
-    const noPrintElements = contentClone.querySelectorAll('.no-print');
-    noPrintElements.forEach(el => el.remove());
+    // Remover elementos interativos
+    const interactiveElements = contentClone.querySelectorAll('button, input, select, .no-print');
+    interactiveElements.forEach(el => el.remove());
 
+    // ✅ CORREÇÃO: APENAS UMA CÓPIA para relatórios
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -65,20 +31,47 @@ export const usePrint = () => {
           <title>${title}</title>
           <meta charset="utf-8">
           <style>
-            ${getPrintStyles()}
+            body { 
+              font-family: 'Arial', sans-serif; 
+              margin: 15px;
+              color: #000;
+              font-size: 12px;
+              line-height: 1.3;
+            }
+            .hidden { display: none !important; }
+            .print\\:block { display: block !important; }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11px;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 4px 6px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+            hr {
+              border: 1px solid #000;
+              margin: 10px 0;
+            }
+            @media print {
+              body { margin: 10px; }
+            }
           </style>
         </head>
         <body onload="window.print()">
-          <div class="print-container">
-            ${contentClone.innerHTML}
-          </div>
+          ${contentClone.innerHTML}
         </body>
       </html>
     `);
 
     printWindow.document.close();
     
-    // Fallback para garantir a impressão
+    // Fallback para impressão
     setTimeout(() => {
       if (!printWindow.closed) {
         printWindow.print();
