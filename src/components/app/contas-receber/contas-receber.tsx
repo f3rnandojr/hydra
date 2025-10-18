@@ -69,11 +69,13 @@ export function ContasReceber() {
     return todasAsContas.filter(conta => {
         const filtroStatusOk = filtros.status === 'todos' || conta.status === filtros.status;
         const filtroColaboradorOk = filtros.colaboradorId === 'todos' || conta.colaboradorId === filtros.colaboradorId;
-        const filtroSetorOk = filtros.setorId === 'todos' || conta.colaborador?.setorId === filtros.setorId;
+        
+        const colaborador = colaboradores.find(c => c._id === conta.colaboradorId);
+        const filtroSetorOk = filtros.setorId === 'todos' || colaborador?.setorId === filtros.setorId;
         
         return filtroStatusOk && filtroColaboradorOk && filtroSetorOk;
     });
-  }, [todasAsContas, filtros]);
+  }, [todasAsContas, filtros, colaboradores]);
 
 
   const buscarColaboradores = async () => {
@@ -90,7 +92,6 @@ export function ContasReceber() {
 
   const buscarSetores = async () => {
     try {
-      // Busca apenas setores ativos para o filtro
       const response = await fetch('/api/setores?status=ativo');
       if (response.ok) {
         const data = await response.json();
@@ -278,7 +279,7 @@ export function ContasReceber() {
   };
 
   const handlePrintContasReceber = async () => {
-    let logoUrl = '/logo.svg'; // Fallback
+    let logoUrl = '/logo.svg';
     try {
       const logoRes = await fetch('/api/configuracoes/logo');
       if (logoRes.ok) {
@@ -288,24 +289,17 @@ export function ContasReceber() {
     } catch (e) {
       console.error("Não foi possível buscar a logo para o relatório.");
     }
-
-
-    // Calcular totais
+  
     const totalEmDebito = calcularTotalEmDebito();
     const totalQuitado = calcularTotalQuitado();
     const totalContas = contasFiltradas.length;
     const contasEmDebito = contasFiltradas.filter(conta => conta.status === "em_debito").length;
     const contasQuitadas = contasFiltradas.filter(conta => conta.status === "quitado").length;
   
-    // Mapeamento de formas de quitação
     const getFormaQuitacaoLabel = (forma?: string) => {
       if (!forma) return '-';
       const formas: { [key: string]: string } = {
-        'dinheiro': 'Dinheiro',
-        'cartao_credito': 'Cartão Crédito',
-        'cartao_debito': 'Cartão Débito', 
-        'pix': 'PIX',
-        'transferencia': 'Transferência'
+        'dinheiro': 'Dinheiro', 'cartao_credito': 'Cartão Crédito', 'cartao_debito': 'Cartão Débito', 'pix': 'PIX', 'transferencia': 'Transferência'
       };
       return formas[forma] || forma;
     };
@@ -316,155 +310,49 @@ export function ContasReceber() {
       <head>
         <title>Relatório de Contas a Receber</title>
         <style>
-          body { 
-            font-family: 'Courier New', monospace; 
-            margin: 15px;
-            font-size: 10px;
-            line-height: 1.1;
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 10px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 5px;
-          }
-          .logo-relatorio {
-            text-align: center;
-            margin-bottom: 10px;
-          }
-          .logo-relatorio img {
-            height: 40px;
-            max-width: 180px;
-            object-fit: contain;
-          }
-          .filtros {
-            margin-bottom: 10px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            background: #f9f9f9;
-            text-align: center;
-          }
-          .resumo-geral {
-            margin: 8px 0;
-            padding: 6px;
-            background: #f0f0f0;
-            text-align: center;
-            font-weight: bold;
-          }
-          .cabecalho-linhas {
-            font-weight: bold;
-            border-bottom: 1px solid #000;
-            padding-bottom: 3px;
-            margin-bottom: 5px;
-            display: grid;
-            grid-template-columns: 80px 120px 70px 70px 60px 80px 80px;
-            gap: 5px;
-            text-align: center;
-          }
-          .linha-conta {
-            display: grid;
-            grid-template-columns: 80px 120px 70px 70px 60px 80px 80px;
-            gap: 5px;
-            margin: 2px 0;
-            padding: 2px 0;
-            border-bottom: 1px dotted #ddd;
-            align-items: center;
-            text-align: center;
-          }
-          .status-debito {
-            color: #d97706;
-            font-weight: bold;
-          }
-          .status-quitado {
-            color: #059669;
-            font-weight: bold;
-          }
-          .total-geral {
-            margin-top: 10px;
-            border-top: 2px solid #000;
-            padding-top: 5px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-          }
-          .col-venda {
-            font-weight: bold;
-          }
-          .col-valor {
-            font-weight: bold;
-          }
-          @media print {
-            body { margin: 8px; }
-          }
+          body { font-family: 'Courier New', monospace; margin: 15px; font-size: 10px; line-height: 1.1; }
+          .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+          .logo-relatorio { text-align: center; margin-bottom: 10px; }
+          .logo-relatorio img { height: 40px; max-width: 180px; object-fit: contain; }
+          .filtros { margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; background: #f9f9f9; text-align: center; }
+          .resumo-geral { margin: 8px 0; padding: 6px; background: #f0f0f0; text-align: center; font-weight: bold; }
+          .cabecalho-linhas, .linha-conta { display: grid; grid-template-columns: 80px 120px 70px 70px 60px 80px 80px; gap: 5px; text-align: center; align-items: center; }
+          .cabecalho-linhas { font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 5px; }
+          .linha-conta { margin: 2px 0; padding: 2px 0; border-bottom: 1px dotted #ddd; }
+          .status-debito { color: #d97706; font-weight: bold; }
+          .status-quitado { color: #059669; font-weight: bold; }
+          .total-geral { margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; font-weight: bold; display: flex; justify-content: space-between; }
+          .col-venda, .col-valor { font-weight: bold; }
+          @media print { body { margin: 8px; } }
         </style>
       </head>
       <body>
-        <div class="logo-relatorio">
-          <img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'" />
-        </div>
-        <div class="header">
-          <h1>RELATÓRIO DE CONTAS A RECEBER</h1>
-          <p>${new Date().toLocaleDateString('pt-BR')}</p>
-        </div>
-  
-        <!-- Filtros Aplicados -->
+        <div class="logo-relatorio"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'" /></div>
+        <div class="header"><h1>RELATÓRIO DE CONTAS A RECEBER</h1><p>${new Date().toLocaleDateString('pt-BR')}</p></div>
         <div class="filtros">
           <strong>FILTROS:</strong> 
           Status: ${filtros.status === 'todos' ? 'Todos' : (filtros.status === 'em_debito' ? 'Em Débito' : 'Quitados')} | 
           Colaborador: ${filtros.colaboradorId === 'todos' ? 'Todos' : (colaboradores.find(c => c._id === filtros.colaboradorId)?.nome || 'Filtrado')} |
           Setor: ${filtros.setorId === 'todos' ? 'Todos' : (setores.find(s => s._id === filtros.setorId)?.nome || 'Filtrado')}
         </div>
-  
-        <!-- Resumo Geral -->
-        <div class="resumo-geral">
-          ${totalContas} CONTAS | ${contasEmDebito} EM DÉBITO | ${contasQuitadas} QUITADAS | 
-          A RECEBER: R$ ${totalEmDebito.toFixed(2)} | RECEBIDO: R$ ${totalQuitado.toFixed(2)}
-        </div>
-  
-        <!-- Cabeçalho das Colunas -->
-        <div class="cabecalho-linhas">
-          <span>VENDA</span>
-          <span>COLABORADOR</span>
-          <span>DATA</span>
-          <span>STATUS</span>
-          <span>VALOR</span>
-          <span>QUITAÇÃO</span>
-          <span>DATA</span>
-        </div>
-  
-        <!-- Lista de Contas - GRID ORGANIZADO -->
-        ${contasFiltradas.map(conta => {
-          const dataVenda = new Date(conta.dataVenda).toLocaleDateString('pt-BR');
-          const dataQuitacao = conta.dataQuitacao 
-            ? new Date(conta.dataQuitacao).toLocaleDateString('pt-BR') 
-            : '-';
-          const formaQuitacao = getFormaQuitacaoLabel(conta.formaQuitacao);
-          const status = conta.status === 'quitado' ? 'QUITADO' : 'EM DÉBITO';
-          
-          return `
-            <div class="linha-conta">
-              <span class="col-venda">#${conta.venda?.numeroVenda || 'N/A'}</span>
-              <span>${conta.colaborador?.nome || 'N/A'}</span>
-              <span>${dataVenda}</span>
-              <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">
-                ${status}
-              </span>
-              <span class="col-valor">R$ ${conta.valor.toFixed(2)}</span>
-              <span>${conta.status === 'quitado' ? formaQuitacao : '-'}</span>
-              <span>${conta.status === 'quitado' ? dataQuitacao : '-'}</span>
-            </div>
-          `;
-        }).join('')}
-  
-        <!-- Totais -->
-        <div class="total-geral">
-          <span class="status-debito">TOTAL EM DÉBITO: R$ ${totalEmDebito.toFixed(2)}</span>
-          <span class="status-quitado">TOTAL QUITADO: R$ ${totalQuitado.toFixed(2)}</span>
-        </div>
+        <div class="resumo-geral">${totalContas} CONTAS | ${contasEmDebito} EM DÉBITO | ${contasQuitadas} QUITADAS | A RECEBER: R$ ${totalEmDebito.toFixed(2)} | RECEBIDO: R$ ${totalQuitado.toFixed(2)}</div>
+        <div class="cabecalho-linhas"><span>VENDA</span><span>COLABORADOR</span><span>DATA</span><span>STATUS</span><span>VALOR</span><span>QUITAÇÃO</span><span>DATA</span></div>
+        ${contasFiltradas.map(conta => `
+          <div class="linha-conta">
+            <span class="col-venda">#${conta.venda?.numeroVenda || 'N/A'}</span>
+            <span>${conta.colaborador?.nome || 'N/A'}</span>
+            <span>${new Date(conta.dataVenda).toLocaleDateString('pt-BR')}</span>
+            <span class="${conta.status === 'em_debito' ? 'status-debito' : 'status-quitado'}">${conta.status === 'quitado' ? 'QUITADO' : 'EM DÉBITO'}</span>
+            <span class="col-valor">R$ ${conta.valor.toFixed(2)}</span>
+            <span>${conta.status === 'quitado' ? getFormaQuitacaoLabel(conta.formaQuitacao) : '-'}</span>
+            <span>${conta.dataQuitacao ? new Date(conta.dataQuitacao).toLocaleDateString('pt-BR') : '-'}</span>
+          </div>
+        `).join('')}
+        <div class="total-geral"><span class="status-debito">TOTAL EM DÉBITO: R$ ${totalEmDebito.toFixed(2)}</span><span class="status-quitado">TOTAL QUITADO: R$ ${totalQuitado.toFixed(2)}</span></div>
         <script>
-            window.onload = function() {
-                window.print();
-            }
+          window.onload = function() {
+            window.print();
+          }
         </script>
       </body>
       </html>
@@ -701,8 +589,8 @@ export function ContasReceber() {
                       {conta.colaborador?.matricula && (
                         <span className="text-muted-foreground">(Mat: {conta.colaborador.matricula})</span>
                       )}
-                      {conta.colaborador?.setorId && (
-                        <span className="text-muted-foreground">- {setores.find(s => s._id === conta.colaborador?.setorId)?.nome || 'Setor não encontrado'}</span>
+                      {colaboradores.find(c => c._id === conta.colaboradorId)?.setorId && (
+                        <span className="text-muted-foreground">- {setores.find(s => s._id === colaboradores.find(c => c._id === conta.colaboradorId)?.setorId)?.nome || 'Setor não encontrado'}</span>
                       )}
                     </div>
                   </div>

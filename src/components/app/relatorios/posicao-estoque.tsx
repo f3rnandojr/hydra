@@ -118,7 +118,7 @@ export function PosicaoEstoque() {
   };
 
   const imprimirRelatorio = async () => {
-     let logoUrl = '/logo.svg'; // Fallback
+    let logoUrl = '/logo.svg';
     try {
       const logoRes = await fetch('/api/configuracoes/logo');
       if (logoRes.ok) {
@@ -128,12 +128,12 @@ export function PosicaoEstoque() {
     } catch (e) {
       console.error("Não foi possível buscar a logo para o relatório.");
     }
-    
+  
+    const tableHtml = document.getElementById('report-table-container')?.innerHTML;
+    const summaryHtml = document.getElementById('report-summary-container')?.innerHTML;
+  
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      const tableHtml = document.getElementById('report-table-container')?.innerHTML;
-      const summaryHtml = document.getElementById('report-summary-container')?.innerHTML;
-      
       printWindow.document.write(`
         <html>
           <head>
