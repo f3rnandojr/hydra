@@ -62,6 +62,11 @@ export function ContasReceber() {
   
   const { handlePrint } = usePrint();
   const reportRef = useRef<HTMLDivElement>(null);
+  const [currentDate, setCurrentDate] = useState<string>('');
+
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleDateString('pt-BR'));
+  }, []);
 
 
   useEffect(() => {
@@ -566,7 +571,7 @@ export function ContasReceber() {
       <div ref={reportRef} className="hidden print:block">
         <div className="text-center mb-4">
           <h1 className="text-xl font-bold">RELATÓRIO DE CONTAS A RECEBER</h1>
-          <p>Emitido em: {new Date().toLocaleDateString('pt-BR')}</p>
+          <p>Emitido em: {currentDate || 'Carregando...'}</p>
         </div>
 
         <hr className="my-2 border-black" />
