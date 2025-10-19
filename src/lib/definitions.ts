@@ -52,6 +52,7 @@ export type ItemVenda = {
   quantidade: number;
   precoUnitario: number;
   subtotal: number;
+  saldoEstoque?: number;
 };
 
 export type Venda = {
@@ -65,11 +66,12 @@ export type Venda = {
   formaPagamento: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar";
   itens: ItemVenda[];
   total: number;
-  status: "ativa" | "cancelada" | "editada";
+  status: "ativa" | "finalizada" | "cancelada" | "editada";
   vendaOriginalId?: string;
   motivoCancelamento?: string;
   usuarioCancelamentoId?: string;
   dataCancelamento?: string;
+  dataEdicao?: string;
   usuarioId: string | ObjectId;
   usuario?: Usuario;
   dataCriacao: Date;
