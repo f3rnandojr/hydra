@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     const duasHorasAtras = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     const filtro = {
-      dataVenda: { $gte: duasHorasAtras }
+      dataVenda: { $gte: duasHorasAtras },
+      status: { $in: ["ativa", "finalizada"] }
     };
     
     const aggregatePipeline: any[] = [

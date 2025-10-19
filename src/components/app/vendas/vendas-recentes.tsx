@@ -34,7 +34,6 @@ interface VendaCompleta extends Venda {
 }
 
 interface VendasRecentesProps {
-  onEditarVenda?: (venda: VendaCompleta) => void;
   onVendaAtualizada?: () => void;
 }
 
@@ -77,7 +76,7 @@ export function VendasRecentes({ onVendaAtualizada }: VendasRecentesProps) {
   const vendasFiltradas = vendas.filter(venda => 
     pesquisa === "" || 
     venda.numeroVenda.includes(pesquisa) ||
-    venda.usuario?.nome.toLowerCase().includes(pesquisa.toLowerCase())
+    (venda.usuario?.nome && venda.usuario.nome.toLowerCase().includes(pesquisa.toLowerCase()))
   );
 
   const cancelarVenda = async (vendaId: string) => {
