@@ -65,7 +65,11 @@ export type Venda = {
   formaPagamento: "dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar";
   itens: ItemVenda[];
   total: number;
-  status: "finalizada" | "cancelada";
+  status: "ativa" | "cancelada" | "editada";
+  vendaOriginalId?: string;
+  motivoCancelamento?: string;
+  usuarioCancelamentoId?: string;
+  dataCancelamento?: string;
   usuarioId: string | ObjectId;
   usuario?: Usuario;
   dataCriacao: Date;
