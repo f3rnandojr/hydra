@@ -64,7 +64,7 @@ export function GerenciarVendas() {
 
   const vendasFiltradas = vendas.filter(venda => {
     const matchStatus = filtroStatus === "todas" || 
-      (filtroStatus === "ativas" && venda.status === "ativa") ||
+      (filtroStatus === "ativas" && (venda.status === "ativa" || venda.status === "finalizada")) ||
       (filtroStatus === "canceladas" && venda.status === "cancelada");
 
     const matchPesquisa = pesquisa === "" || 
@@ -120,6 +120,7 @@ export function GerenciarVendas() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ativa": return <Badge className="bg-green-500 hover:bg-green-600">Ativa</Badge>;
+      case "finalizada": return <Badge className="bg-green-500 hover:bg-green-600">Finalizada</Badge>;
       case "cancelada": return <Badge variant="destructive">Cancelada</Badge>;
       case "editada": return <Badge className="bg-blue-500 hover:bg-blue-600">Editada</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
@@ -203,7 +204,7 @@ export function GerenciarVendas() {
                     </div>
                     <div className="text-right flex-shrink-0 ml-4">
                       <div className="text-lg font-bold">R$ {venda.total.toFixed(2)}</div>
-                      {venda.status === "ativa" && (
+                      {(venda.status === "ativa" || venda.status === "finalizada") && (
                         <div className="flex gap-2 mt-2 justify-end">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
