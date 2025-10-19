@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Edit, Trash2, Printer, Search, RefreshCw, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
@@ -84,7 +85,7 @@ export function VendasRecentes({ onVendaAtualizada }: VendasRecentesProps) {
       toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
       return;
     }
-     if (!motivoCancelamento) {
+     if (!motivoCancelamento.trim()) {
       toast({ title: "Obrigatório", description: "O motivo do cancelamento é obrigatório.", variant: "destructive" });
       return;
     }
@@ -93,7 +94,7 @@ export function VendasRecentes({ onVendaAtualizada }: VendasRecentesProps) {
       const response = await fetch('/api/vendas/cancelar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vendaId, motivo: motivoCancelamento, usuarioCancelamentoId: usuario._id }),
+        body: JSON.stringify({ vendaId, motivo: motivoCancelamento.trim(), usuarioCancelamentoId: usuario._id }),
       });
 
       if (response.ok) {
@@ -103,7 +104,7 @@ export function VendasRecentes({ onVendaAtualizada }: VendasRecentesProps) {
               ? { 
                   ...venda, 
                   status: "cancelada",
-                  motivoCancelamento: motivoCancelamento,
+                  motivoCancelamento: motivoCancelamento.trim(),
                   usuarioCancelamentoId: usuario._id,
                   dataCancelamento: new Date().toISOString()
                 }
