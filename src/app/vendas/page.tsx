@@ -2,6 +2,7 @@ import { VendaForm } from "@/components/app/vendas/venda-form";
 import { GerenciarVendas } from "@/components/app/vendas/gerenciar-vendas";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VendasRecentes } from "@/components/app/vendas/vendas-recentes";
 
 export default async function VendasPage() {
   return (
@@ -16,14 +17,19 @@ export default async function VendasPage() {
           <TabsTrigger value="gerenciar_vendas">Gerenciar Vendas</TabsTrigger>
         </TabsList>
         <TabsContent value="nova_venda" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Registrar Nova Venda</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VendaForm />
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Registrar Nova Venda</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VendaForm />
+              </CardContent>
+            </Card>
+            <div className="lg:col-span-1">
+              <VendasRecentes />
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="gerenciar_vendas" className="space-y-4">
            <GerenciarVendas />
