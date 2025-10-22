@@ -39,7 +39,18 @@ export async function createCollaborator(prevState: any, formData: FormData) {
   
   try {
     const { nome, email, senha, status, setor, matricula } = validatedFields.data;
-    await dbCreateCollaborator({ nome, email, senha, status, setor, matricula });
+
+    // Normalização dos dados
+    const dataToSave = {
+      nome: nome.toUpperCase().trim(),
+      email: email.toLowerCase().trim(),
+      senha,
+      status,
+      setor: setor?.toUpperCase().trim(),
+      matricula: matricula?.toUpperCase().trim()
+    };
+
+    await dbCreateCollaborator(dataToSave);
     revalidatePath("/colaboradores");
     return { message: "Colaborador criado com sucesso." };
   } catch (e) {
@@ -66,7 +77,11 @@ export async function updateCollaborator(id: string, prevState: any, formData: F
     try {
         const { senha, ...rest } = validatedFields.data;
         const dataToUpdate: any = {
-            ...rest,
+            nome: rest.nome.toUpperCase().trim(),
+            email: rest.email.toLowerCase().trim(),
+            status: rest.status,
+            setor: rest.setor?.toUpperCase().trim(),
+            matricula: rest.matricula?.toUpperCase().trim()
         };
 
         if (senha) {

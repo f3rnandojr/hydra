@@ -36,7 +36,15 @@ export async function createProduct(prevState: any, formData: FormData) {
   }
 
   try {
-    await dbCreateProduct(validatedFields.data);
+    const data = validatedFields.data;
+    // Normalização dos dados
+    const dataToSave = {
+      ...data,
+      nome: data.nome.toUpperCase().trim(),
+      codigoEAN: data.codigoEAN?.toUpperCase().trim()
+    };
+
+    await dbCreateProduct(dataToSave);
     revalidatePath("/produtos");
     return { message: "Produto criado com sucesso." };
   } catch (e: any) {
@@ -57,7 +65,14 @@ export async function updateProduct(id: string, prevState: any, formData: FormDa
     }
 
     try {
-        await dbUpdateProduct(id, validatedFields.data);
+        const data = validatedFields.data;
+        // Normalização dos dados
+        const dataToUpdate = {
+          ...data,
+          nome: data.nome.toUpperCase().trim(),
+          codigoEAN: data.codigoEAN?.toUpperCase().trim()
+        };
+        await dbUpdateProduct(id, dataToUpdate);
         revalidatePath("/produtos");
         return { message: "Produto atualizado com sucesso." };
     } catch (e: any) {
