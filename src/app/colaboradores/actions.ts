@@ -21,7 +21,7 @@ const createCollaboratorSchema = collaboratorSchema.extend({
 });
 
 const updateCollaboratorSchema = collaboratorSchema.extend({
-    senha: z.string().min(6, "Senha must have at least 6 characters.").optional().or(z.literal('')),
+    senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres.").optional().or(z.literal('')),
 });
 
 
@@ -48,9 +48,13 @@ export async function createCollaborator(prevState: any, formData: FormData) {
 }
 
 export async function updateCollaborator(id: string, prevState: any, formData: FormData) {
-    const validatedFields = updateCollaboratorSchema.safeParse(
-        Object.fromEntries(formData.entries())
-    );
+    const rawData = Object.fromEntries(formData.entries());
+    // Se a senha estiver vazia, remove do objeto para não validar o mínimo de 6 caracteres
+    if (!rawData.senha) {
+        delete rawData.senha;
+    }
+
+    const validatedFields = updateCollaboratorSchema.safeParse(rawData);
 
     if (!validatedFields.success) {
         return {
