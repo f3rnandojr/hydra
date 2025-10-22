@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Users, User, AlertTriangle, CreditCard, DollarSign, QrCode, RefreshCw } from "lucide-react";
+import { Check, Users, User, AlertTriangle, CreditCard, DollarSign, QrCode, RefreshCw, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +26,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/auth-context';
 import { useCafeteria } from '@/contexts/cafeteria-context';
 import { CupomFiscalDialog } from "@/components/app/vendas/cupom-fiscal-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 interface FinalizarVendaProps {
   open: boolean;
@@ -55,6 +58,7 @@ export function FinalizarVenda({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingParams, setIsLoadingParams] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
   
   const [formaPagamento, setFormaPagamento] = useState<"dinheiro" | "cartao_credito" | "cartao_debito" | "pix" | "apagar">("dinheiro");
 
@@ -322,18 +326,48 @@ export function FinalizarVenda({
                 {tipoCliente === "colaborador" && (
                   <div className="space-y-3">
                     <Label htmlFor="colaborador">Colaborador *</Label>
-                    <Select value={colaboradorId} onValueChange={setColaboradorId} disabled={isLoading || !colaboradores.length}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o colaborador" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colaboradores.map((colab) => (
-                          <SelectItem key={colab._id.toString()} value={colab._id.toString()}>
-                            {colab.nome} ({colab.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={comboboxOpen}
+                          className="w-full justify-between"
+                          disabled={isLoading || !colaboradores.length}
+                        >
+                          {colaboradorId
+                            ? colaboradores.find((colab) => colab._id === colaboradorId)?.nome
+                            : "Selecione o colaborador"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[450px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar colaborador..." />
+                          <CommandEmpty>Nenhum colaborador encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {colaboradores.map((colab) => (
+                              <CommandItem
+                                key={colab._id}
+                                value={colab.nome}
+                                onSelect={() => {
+                                  setColaboradorId(colab._id);
+                                  setComboboxOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    colaboradorId === colab._id ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {colab.nome} ({colab.email})
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {colaboradores.length === 0 && !isLoading && (
                       <p className="text-sm text-destructive">Nenhum colaborador ativo encontrado.</p>
                     )}
