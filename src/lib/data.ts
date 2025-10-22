@@ -99,7 +99,7 @@ export async function deleteCollaborator(id: string): Promise<boolean> {
 }
 
 // Products Functions
-export async function getProducts(cafeteria: string = "cafeteria_01"): Promise<Product[]> {
+export async function getProducts(): Promise<Product[]> {
     const db = await getDb();
     
     const products = await db.collection('produtos').aggregate([
@@ -114,10 +114,7 @@ export async function getProducts(cafeteria: string = "cafeteria_01"): Promise<P
             {
               $match: {
                 $expr: {
-                  $and: [
-                    { $eq: ["$produtoId", "$$produtoId"] },
-                    { $eq: ["$cafeteria", cafeteria] }
-                  ]
+                  $eq: ["$produtoId", "$$produtoId"]
                 }
               }
             }
@@ -128,7 +125,7 @@ export async function getProducts(cafeteria: string = "cafeteria_01"): Promise<P
       {
         $addFields: {
           saldo: {
-            $ifNull: [{ $arrayElemAt: ["$estoqueInfo.saldo", 0] }, 0]
+            $sum: "$estoqueInfo.saldo"
           }
         }
       },
