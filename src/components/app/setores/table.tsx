@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { Setor } from "@/lib/definitions";
 import {
   Table,
@@ -19,6 +20,12 @@ export function SetoresTable({
   setores: Setor[];
   onSuccess: () => void;
 }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <div className="rounded-lg border bg-card">
       <Table>
@@ -40,7 +47,7 @@ export function SetoresTable({
                 </Badge>
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {new Date(setor.dataAtualizacao).toLocaleDateString('pt-BR')}
+                {isClient ? new Date(setor.dataAtualizacao).toLocaleDateString('pt-BR') : '...'}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end items-center gap-2">
