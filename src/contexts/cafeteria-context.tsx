@@ -23,6 +23,12 @@ export function CafeteriaProvider({ children }: { children: React.ReactNode }) {
   const { usuario } = useAuth();
 
   useEffect(() => {
+    // Só executa a lógica se o usuário estiver logado.
+    if (!usuario) {
+      setCarregando(false);
+      return;
+    }
+
     async function verificarCafeteriaIP() {
       try {
         setCarregando(true);
@@ -55,7 +61,7 @@ export function CafeteriaProvider({ children }: { children: React.ReactNode }) {
     } else {
       verificarCafeteriaIP();
     }
-  }, []);
+  }, [usuario]); // A dependência agora é o usuário.
 
   const setCafeteriaAtiva = async (cafeteria: string) => {
     try {

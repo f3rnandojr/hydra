@@ -2,12 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/auth-context";
 import { useCafeteria } from "@/contexts/cafeteria-context";
 
 export function ModalSelecaoCafeteria() {
-  const { cafeteriaAtiva, mostrarModal, setCafeteriaAtiva, fecharModal } = useCafeteria();
+  const { cafeteriaAtiva, mostrarModal, setCafeteriaAtiva } = useCafeteria();
+  const { usuario } = useAuth(); // Pega o usuário do contexto de autenticação
 
-  if (!mostrarModal) return null;
+  // Só mostra o modal se o estado for true E se houver um usuário logado.
+  if (!mostrarModal || !usuario) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
